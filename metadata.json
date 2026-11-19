@@ -1,0 +1,8 @@
+{
+  "name": "TrackPadLens",
+  "description": "High-performance Windows 10/11 C#/.NET 8 writing tablet application turning a Precision Touchpad into an absolute-positioned writing lens, paired with an interactive algorithm sandbox and solution explorer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

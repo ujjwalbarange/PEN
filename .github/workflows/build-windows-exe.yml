@@ -1,0 +1,111 @@
+name: Build Windows TrackPadLens.exe
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-x64:
+    name: Build, Test & Package TrackPadLens (win-x64)
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: TrackPadLens
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore NuGet packages
+        run: dotnet restore TrackPadLens.sln -p:Platform=x64
+
+      - name: Run xUnit tests
+        run: dotnet test Tests\TrackPadLens.Tests.csproj -c Release --no-restore --verbosity normal
+
+      - name: Build Debug x64 (with PDB symbols)
+        run: |
+          dotnet build TrackPadLens.csproj -c Debug -p:Platform=x64 -r win-x64 --no-self-contained --no-restore
+          New-Item -ItemType Directory -Force -Path ..\artifacts\debug | Out-Null
+          Copy-Item bin\x64\Debug\net8.0-windows\win-x64\* ..\artifacts\debug\ -Recurse -Force
+
+      - name: Build Release x64 (Framework-Dependent)
+        run: |
+          dotnet build TrackPadLens.csproj -c Release -p:Platform=x64 -r win-x64 --no-self-contained --no-restore
+          New-Item -ItemType Directory -Force -Path ..\artifacts\release-fd | Out-Null
+          Copy-Item bin\x64\Release\net8.0-windows\win-x64\* ..\artifacts\release-fd\ -Recurse -Force
+
+      - name: Publish Standalone Single-File TrackPadLens.exe (win-x64)
+        run: |
+          dotnet publish TrackPadLens.csproj -c Release -p:Platform=x64 -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -o ..\artifacts\standalone
+          if (-not (Test-Path ..\artifacts\standalone\TrackPadLens.exe)) {
+            throw "Expected standalone TrackPadLens.exe was not generated."
+          }
+
+      - name: Generate SHA-256 Checksums
+        working-directory: artifacts
+        run: |
+          $standaloneHash = (Get-FileHash standalone\TrackPadLens.exe -Algorithm SHA256).Hash
+          "SHA256 (TrackPadLens.exe standalone win-x64) = $standaloneHash" | Out-File -Encoding utf8 SHA256SUMS.txt
+          Get-Content SHA256SUMS.txt
+
+      - name: Upload Standalone Single-File EXE Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrackPadLens-win-x64-Standalone
+          path: |
+            artifacts/standalone/TrackPadLens.exe
+            artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Upload Debug Build + PDB Symbols Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrackPadLens-win-x64-Debug
+          path: artifacts/debug/
+          if-no-files-found: error
+
+      - name: Upload Framework-Dependent Release Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrackPadLens-win-x64-FrameworkDependent
+          path: artifacts/release-fd/
+          if-no-files-found: error
+
+      - name: Create Release Archive for Debug Build (Tag Only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: artifacts
+        run: Compress-Archive -Path debug\* -DestinationPath TrackPadLens-win-x64-Debug.zip -Force
+
+      - name: Attach TrackPadLens.exe to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/standalone/TrackPadLens.exe
+            artifacts/TrackPadLens-win-x64-Debug.zip
+            artifacts/SHA256SUMS.txt
+          generate_release_notes: true
