@@ -4,7 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <ImplicitUsings>disable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <Platforms>x64</Platforms>
@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <!-- Stage runnable Debug/Release executable + PDB symbols to project root ONLY after successful build -->
-  <Target Name="CopyExecutableToRoot" AfterTargets="Build" Condition="'$(PublishSingleFile)' != 'true' And Exists('$(TargetDir)$(AssemblyName).exe')">
+  <Target Name="CopyExecutableToRoot" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true' And '$(PublishSingleFile)' != 'true' And Exists('$(TargetDir)$(AssemblyName).exe')">
     <ItemGroup>
       <RootStageFiles Include="$(TargetDir)$(AssemblyName).exe" />
       <RootStageFiles Include="$(TargetDir)$(AssemblyName).dll" />

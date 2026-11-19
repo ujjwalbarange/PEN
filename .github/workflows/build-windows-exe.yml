@@ -39,22 +39,27 @@ jobs:
         run: dotnet restore TrackPadLens.sln -p:Platform=x64
 
       - name: Run xUnit tests
-        run: dotnet test Tests\TrackPadLens.Tests.csproj -c Release --no-restore --verbosity normal
+        run: dotnet test Tests\TrackPadLens.Tests.csproj -c Release -p:Platform=x64 --verbosity normal
 
       - name: Build Debug x64 (with PDB symbols)
         run: |
-          dotnet build TrackPadLens.csproj -c Debug -p:Platform=x64 -r win-x64 --no-self-contained --no-restore
           New-Item -ItemType Directory -Force -Path ..\artifacts\debug | Out-Null
-          Copy-Item bin\x64\Debug\net8.0-windows\win-x64\* ..\artifacts\debug\ -Recurse -Force
+          dotnet build TrackPadLens.csproj -c Debug -p:Platform=x64 -r win-x64 --no-self-contained -o ..\artifacts\debug
+          if (-not (Test-Path ..\artifacts\debug\TrackPadLens.exe)) {
+            throw "Expected Debug TrackPadLens.exe was not generated."
+          }
 
       - name: Build Release x64 (Framework-Dependent)
         run: |
-          dotnet build TrackPadLens.csproj -c Release -p:Platform=x64 -r win-x64 --no-self-contained --no-restore
           New-Item -ItemType Directory -Force -Path ..\artifacts\release-fd | Out-Null
-          Copy-Item bin\x64\Release\net8.0-windows\win-x64\* ..\artifacts\release-fd\ -Recurse -Force
+          dotnet build TrackPadLens.csproj -c Release -p:Platform=x64 -r win-x64 --no-self-contained -o ..\artifacts\release-fd
+          if (-not (Test-Path ..\artifacts\release-fd\TrackPadLens.exe)) {
+            throw "Expected Release framework-dependent TrackPadLens.exe was not generated."
+          }
 
       - name: Publish Standalone Single-File TrackPadLens.exe (win-x64)
         run: |
+          New-Item -ItemType Directory -Force -Path ..\artifacts\standalone | Out-Null
           dotnet publish TrackPadLens.csproj -c Release -p:Platform=x64 -r win-x64 `
             --self-contained true `
             -p:PublishSingleFile=true `

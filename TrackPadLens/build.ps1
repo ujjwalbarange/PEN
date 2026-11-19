@@ -51,13 +51,26 @@ if ($Mode -eq "Test") {
     exit 0
 }
 
+function Resolve-BuildOutputDir([string]$Configuration) {
+    $Candidates = @(
+        (Join-Path $ProjectRoot "bin\x64\$Configuration\net8.0-windows\win-x64"),
+        (Join-Path $ProjectRoot "bin\$Configuration\net8.0-windows\win-x64")
+    )
+    foreach ($dir in $Candidates) {
+        if (Test-Path (Join-Path $dir "TrackPadLens.exe")) {
+            return $dir
+        }
+    }
+    return $Candidates[0]
+}
+
 if ($Mode -eq "Debug") {
     dotnet build $Csproj -c Debug -p:Platform=x64 -r win-x64 --no-self-contained
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Debug build failed. Existing root executable was not modified."
         exit $LASTEXITCODE
     }
-    $OutDir = Join-Path $ProjectRoot "bin\x64\Debug\net8.0-windows\win-x64"
+    $OutDir = Resolve-BuildOutputDir "Debug"
     Stage-FrameworkDependentToRoot $OutDir
     Write-Host "Debug build ready and staged at root: $RootExe (with TrackPadLens.pdb)" -ForegroundColor Green
     exit 0
@@ -69,7 +82,7 @@ if ($Mode -eq "Release") {
         Write-Error "Release build failed. Existing root executable was not modified."
         exit $LASTEXITCODE
     }
-    $OutDir = Join-Path $ProjectRoot "bin\x64\Release\net8.0-windows\win-x64"
+    $OutDir = Resolve-BuildOutputDir "Release"
     Stage-FrameworkDependentToRoot $OutDir
     Write-Host "Release build ready and staged at root: $RootExe" -ForegroundColor Green
     exit 0
