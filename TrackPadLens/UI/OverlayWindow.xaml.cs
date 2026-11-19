@@ -69,10 +69,11 @@ public partial class OverlayWindow : Window, IDisposable
         {
             IsHitTestVisible = false;
             SnapsToDevicePixels = true;
-            _visuals = new VisualCollection(this) { _visual };
+            _visuals = new VisualCollection(this);
+            _visuals.Add(_visual);
         }
 
-        protected override int VisualChildrenCount => _visuals.Count;
+        protected override int VisualChildrenCount => _visuals?.Count ?? 0;
         protected override Visual GetVisualChild(int index) => _visuals[index];
 
         public void RenderLens(
@@ -277,7 +278,9 @@ public partial class OverlayWindow : Window, IDisposable
 
     private void RedrawLensChrome()
     {
-        double ppd = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        double ppd = PresentationSource.FromVisual(this) != null
+            ? VisualTreeHelper.GetDpi(this).PixelsPerDip
+            : (_dpiScaleX > 0.01 ? _dpiScaleX : 1.0);
         _lensVisual.RenderLens(_lensVisible, in _currentLens, _isAnchorLocked, in _hoverDot, _scaleBadgeText, ppd);
     }
 

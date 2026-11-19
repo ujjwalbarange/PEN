@@ -61,13 +61,31 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
+            string? logPath = TryWriteStartupErrorLog(ex);
             CleanupAllResources();
+            string logHint = string.IsNullOrEmpty(logPath) ? string.Empty : $"\n\nDetails written to:\n{logPath}";
             MessageBox.Show(
-                $"TrackPadLens failed to start cleanly:\n{ex.Message}",
+                $"TrackPadLens failed to start cleanly:\n{ex.GetType().Name}: {ex.Message}{logHint}",
                 "TrackPadLens Startup Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown(1);
+        }
+    }
+
+    private static string? TryWriteStartupErrorLog(Exception ex)
+    {
+        try
+        {
+            string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "TrackPadLens");
+            Directory.CreateDirectory(dir);
+            string logPath = Path.Combine(dir, "startup-error.log");
+            File.WriteAllText(logPath, $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}]\n{ex}\n");
+            return logPath;
+        }
+        catch
+        {
+            return null;
         }
     }
 

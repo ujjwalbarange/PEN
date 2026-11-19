@@ -26,10 +26,11 @@ public sealed class LaserTrailRenderer : FrameworkElement, IDisposable
     public LaserTrailRenderer()
     {
         IsHitTestVisible = false;
-        _visuals = new VisualCollection(this) { _trailVisual };
+        _visuals = new VisualCollection(this);
+        _visuals.Add(_trailVisual);
     }
 
-    protected override int VisualChildrenCount => _visuals.Count;
+    protected override int VisualChildrenCount => _visuals?.Count ?? 0;
     protected override Visual GetVisualChild(int index) => _visuals[index];
 
     public int ActivePointCount => _count;

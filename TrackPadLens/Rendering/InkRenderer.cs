@@ -20,10 +20,11 @@ public sealed class InkRenderer : FrameworkElement
     {
         IsHitTestVisible = false;
         SnapsToDevicePixels = false;
-        _visuals = new VisualCollection(this) { _activeStrokeVisual };
+        _visuals = new VisualCollection(this);
+        _visuals.Add(_activeStrokeVisual);
     }
 
-    protected override int VisualChildrenCount => _visuals.Count;
+    protected override int VisualChildrenCount => _visuals?.Count ?? 0;
     protected override Visual GetVisualChild(int index) => _visuals[index];
 
     public void UpdateActiveStroke(Stroke? stroke)

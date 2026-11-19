@@ -106,4 +106,36 @@ public sealed class StrokeProcessorTests
         Assert.True(ink.Strokes[0].Count >= 2);
         Assert.False(processor.CurrentHoverDot.Visible);
     }
+
+    [Fact]
+    public void WpfVisualHosts_ConstructWithoutNullReferenceException()
+    {
+        Exception? staException = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var inkRenderer = new InkRenderer();
+                using var laserRenderer = new LaserTrailRenderer();
+                using var overlay = new TrackPadLens.UI.OverlayWindow();
+                overlay.ApplyMonitorScope(MonitorScope.PrimaryOnly);
+                overlay.UpdateLens(new LensRectDip(100, 100, 420, 260), isAnchorLocked: false);
+                Assert.NotNull(inkRenderer);
+                Assert.NotNull(laserRenderer);
+            }
+            catch (Exception ex)
+            {
+                staException = ex;
+            }
+            finally
+            {
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.InvokeShutdown();
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+
+        Assert.Null(staException);
+    }
 }
