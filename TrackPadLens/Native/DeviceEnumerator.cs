@@ -33,6 +33,10 @@ public sealed class DeviceEnumerator
             return (touchpads, mice);
         }
 
+        var pendingMice = new List<(IntPtr Handle, string Path, Win32Interop.RID_DEVICE_INFO_MOUSE MouseInfo)>();
+        var touchpadVidPids = new HashSet<(ushort Vid, ushort Pid)>();
+
+        // Pass 1: Discover all Precision Touchpads first so their companion mouse collections are accurately excluded
         for (int i = 0; i < fetched; i++)
         {
             IntPtr hDevice = list[i].hDevice;
@@ -54,20 +58,36 @@ public sealed class DeviceEnumerator
                     if (touchpad != null)
                     {
                         touchpads.Add(touchpad);
+                        if (hid.dwVendorId != 0 && hid.dwProductId != 0)
+                        {
+                            touchpadVidPids.Add(((ushort)hid.dwVendorId, (ushort)hid.dwProductId));
+                        }
                     }
                 }
             }
             else if (dwType == Win32Interop.RIM_TYPEMOUSE)
             {
-                var mouse = BuildMouseDevice(hDevice, devicePath, info.mouse);
-                mice.Add(mouse);
+                pendingMice.Add((hDevice, devicePath, info.mouse));
             }
+        }
+
+        // Pass 2: Classify pointing devices using known built-in touchpad VID/PIDs
+        foreach (var (hDevice, devicePath, mouseInfo) in pendingMice)
+        {
+            var mouse = BuildMouseDevice(hDevice, devicePath, mouseInfo, touchpadVidPids);
+            mice.Add(mouse);
         }
 
         return (touchpads, mice);
     }
 
     public static DeviceCategory ClassifyDevicePath(string devicePath, bool isDigitizerTouchpad)
+        => ClassifyDevicePath(devicePath, isDigitizerTouchpad, knownTouchpadVidPids: null);
+
+    public static DeviceCategory ClassifyDevicePath(
+        string devicePath,
+        bool isDigitizerTouchpad,
+        IReadOnlySet<(ushort Vid, ushort Pid)>? knownTouchpadVidPids)
     {
         if (isDigitizerTouchpad)
         {
@@ -87,9 +107,22 @@ public sealed class DeviceEnumerator
             return DeviceCategory.ExternalBluetoothMouse;
         }
 
-        // Precision Touchpad mouse-emulation collection often carries ACPI/I2C/ELAN/SYNA/MSFT0001
+        // If this mouse collection shares the exact VID/PID of a discovered built-in Precision Touchpad,
+        // it is the touchpad's mouse-emulation collection rather than an external USB mouse.
+        if (knownTouchpadVidPids != null && knownTouchpadVidPids.Count > 0)
+        {
+            var (vid, pid) = ExtractVidPidFromPath(devicePath);
+            if (vid != 0 && pid != 0 && knownTouchpadVidPids.Contains((vid, pid)))
+            {
+                return DeviceCategory.OtherPointingDevice;
+            }
+        }
+
+        // Precision Touchpad mouse-emulation collections often carry ACPI/I2C/VEN_/vendor tokens
         if (upper.Contains("ACPI") || upper.Contains("I2C") || upper.Contains("SYNA") ||
-            upper.Contains("ELAN") || upper.Contains("MSFT0001") || upper.Contains("DLL0"))
+            upper.Contains("ELAN") || upper.Contains("MSFT0001") || upper.Contains("DLL0") ||
+            upper.Contains("ALPS") || upper.Contains("ETD") || upper.Contains("GDX") ||
+            upper.Contains("FTCS") || upper.Contains("PNP0C50") || upper.Contains("VEN_"))
         {
             return DeviceCategory.OtherPointingDevice;
         }
@@ -179,9 +212,10 @@ public sealed class DeviceEnumerator
     private static MouseDevice BuildMouseDevice(
         IntPtr hDevice,
         string devicePath,
-        Win32Interop.RID_DEVICE_INFO_MOUSE mouseInfo)
+        Win32Interop.RID_DEVICE_INFO_MOUSE mouseInfo,
+        IReadOnlySet<(ushort Vid, ushort Pid)>? knownTouchpadVidPids)
     {
-        var category = ClassifyDevicePath(devicePath, isDigitizerTouchpad: false);
+        var category = ClassifyDevicePath(devicePath, isDigitizerTouchpad: false, knownTouchpadVidPids);
         var (vid, pid) = ExtractVidPidFromPath(devicePath);
         string? product = QueryHidProductName(devicePath);
         string fallbackName = category switch

@@ -39,6 +39,7 @@ public sealed class AppSettings
     // System
     public bool StartWithWindows { get; set; } = false;
     public bool ConfirmBeforeClear { get; set; } = false;
+    public bool SuppressTouchpadCursorInDoodleMode { get; set; } = true;
 
     // Touchpad calibration
     public CalibrationProfile Calibration { get; set; } = new();

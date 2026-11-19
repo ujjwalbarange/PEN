@@ -133,7 +133,8 @@
                     <TextBox x:Name="HotkeyClearBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
                 </Grid>
 
-                <CheckBox x:Name="StartWithWindowsCheck" Content="Start TrackPadLens with Windows (current user registry key, no admin required)" Foreground="#E2E8F0" Margin="0,4,0,8"/>
+                <CheckBox x:Name="SuppressTouchpadCursorCheck" Content="Suppress built-in touchpad cursor movement while Doodle Mode is ON (external mouse moves cursor freely)" Foreground="#E2E8F0" Margin="0,4,0,8"/>
+                <CheckBox x:Name="StartWithWindowsCheck" Content="Start TrackPadLens with Windows (current user registry key, no admin required)" Foreground="#E2E8F0" Margin="0,0,0,8"/>
             </StackPanel>
         </ScrollViewer>
 

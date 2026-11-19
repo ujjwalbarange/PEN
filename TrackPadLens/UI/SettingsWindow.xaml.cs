@@ -38,6 +38,7 @@ public partial class SettingsWindow : Window
         HotkeySnapshotBox.Text = _settings.HotkeySaveSnapshot;
         HotkeyClearBox.Text = _settings.HotkeyClearInk;
 
+        SuppressTouchpadCursorCheck.IsChecked = _settings.SuppressTouchpadCursorInDoodleMode;
         StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
     }
 
@@ -83,6 +84,7 @@ public partial class SettingsWindow : Window
         _settings.HotkeySaveSnapshot = HotkeySnapshotBox.Text.Trim();
         _settings.HotkeyClearInk = HotkeyClearBox.Text.Trim();
 
+        _settings.SuppressTouchpadCursorInDoodleMode = SuppressTouchpadCursorCheck.IsChecked == true;
         _settings.StartWithWindows = StartWithWindowsCheck.IsChecked == true;
         _settings.Sanitize();
 

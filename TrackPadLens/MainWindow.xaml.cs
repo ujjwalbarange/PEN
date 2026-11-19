@@ -140,8 +140,10 @@ public partial class MainWindow : Window
         };
 
         CursorIsolationText.Text = _hardware.IsCursorSuppressionActive
-            ? "Active (Optional signed HID filter driver)"
-            : "Not isolated in user mode (use Shift / R-Click Lock)";
+            ? "Active (Touchpad cursor suppressed; external mouse free)"
+            : settings.SuppressTouchpadCursorInDoodleMode
+                ? "Ready (Suppresses touchpad cursor when Doodle Mode is ON)"
+                : "Disabled in Settings";
 
         var lens = _overlay.CurrentLens;
         LensDimensionsText.Text = $"{lens.Width:F0} × {lens.Height:F0} DIP @ ({lens.Left:F0}, {lens.Top:F0})";

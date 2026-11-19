@@ -101,7 +101,10 @@ public partial class App : Application
         _currentLensWidthDip = _settings.DefaultLensWidthDip;
 
         // 1. Hardware Input Engine first (Phase 15 rule #5)
-        _hardware = new HardwareInputManager();
+        _hardware = new HardwareInputManager
+        {
+            SuppressTouchpadCursorEnabled = _settings.SuppressTouchpadCursorInDoodleMode
+        };
         _hardware.Initialize();
 
         // 2. Ink & Processing Engine
@@ -444,6 +447,11 @@ public partial class App : Application
         {
             _settings = updated;
             SaveSettings();
+            if (_hardware != null)
+            {
+                _hardware.SuppressTouchpadCursorEnabled = _settings.SuppressTouchpadCursorInDoodleMode;
+                _hardware.SetDoodleModeCursorIsolation(_doodleModeEnabled);
+            }
             _strokeProcessor?.ApplySettings(_settings);
             _overlayWindow?.ApplyMonitorScope(_settings.MonitorScope);
             RegisterConfiguredHotkeys();

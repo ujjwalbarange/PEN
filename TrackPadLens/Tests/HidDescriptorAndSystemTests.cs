@@ -145,6 +145,51 @@ public sealed class HidDescriptorAndSystemTests
         var (vid, pid) = DeviceEnumerator.ExtractVidPidFromPath(@"\\?\HID#VID_046D&PID_C077&MI_00");
         Assert.Equal((ushort)0x046D, vid);
         Assert.Equal((ushort)0xC077, pid);
+
+        // Built-in touchpad's companion mouse-emulation collection sharing the same VID/PID
+        // must be classified as OtherPointingDevice, never as ExternalUsbMouse.
+        var knownTouchpads = new HashSet<(ushort Vid, ushort Pid)> { (0x06CB, 0xCE44) };
+        Assert.Equal(
+            DeviceCategory.OtherPointingDevice,
+            DeviceEnumerator.ClassifyDevicePath(@"\\?\HID#VID_06CB&PID_CE44&MI_01&Col01#7&1234#...", isDigitizerTouchpad: false, knownTouchpads));
+        Assert.Equal(
+            DeviceCategory.ExternalUsbMouse,
+            DeviceEnumerator.ClassifyDevicePath(@"\\?\HID#VID_046D&PID_C077&MI_00#7&1234#...", isDigitizerTouchpad: false, knownTouchpads));
+    }
+
+    [Fact]
+    public void MouseHookManager_SuppressesTouchpadCursorOnlyInDoodleModeAndPreservesExternalMouse()
+    {
+        // Doodle Mode OFF -> never suppress anything
+        Assert.False(MouseHookManager.ShouldSuppressHookEvent(
+            Win32Interop.WM_MOUSEMOVE, suppressEnabled: false, touchpadContactOrGuardActive: true,
+            dwExtraInfo: 0xFF515700UL, externalClickRecent: false, externalWheelRecent: false));
+
+        // Doodle Mode ON + touchpad contact active -> suppress cursor moves and touchpad tap-to-click
+        Assert.True(MouseHookManager.ShouldSuppressHookEvent(
+            Win32Interop.WM_MOUSEMOVE, suppressEnabled: true, touchpadContactOrGuardActive: true,
+            dwExtraInfo: 0, externalClickRecent: false, externalWheelRecent: false));
+        Assert.True(MouseHookManager.ShouldSuppressHookEvent(
+            Win32Interop.WM_LBUTTONDOWN, suppressEnabled: true, touchpadContactOrGuardActive: true,
+            dwExtraInfo: 0, externalClickRecent: false, externalWheelRecent: false));
+
+        // External mouse moving when touchpad is untouched -> passes straight through
+        Assert.False(MouseHookManager.ShouldSuppressHookEvent(
+            Win32Interop.WM_MOUSEMOVE, suppressEnabled: true, touchpadContactOrGuardActive: false,
+            dwExtraInfo: 0, externalClickRecent: false, externalWheelRecent: false));
+
+        // External mouse clicking or scrolling even while touchpad guard is active -> preserved
+        Assert.False(MouseHookManager.ShouldSuppressHookEvent(
+            Win32Interop.WM_LBUTTONDOWN, suppressEnabled: true, touchpadContactOrGuardActive: true,
+            dwExtraInfo: 0, externalClickRecent: true, externalWheelRecent: false));
+        Assert.False(MouseHookManager.ShouldSuppressHookEvent(
+            Win32Interop.WM_MOUSEWHEEL, suppressEnabled: true, touchpadContactOrGuardActive: true,
+            dwExtraInfo: 0, externalClickRecent: false, externalWheelRecent: true));
+
+        // Right-click (Anchor Lock / context menus) is never suppressed
+        Assert.False(MouseHookManager.ShouldSuppressHookEvent(
+            Win32Interop.WM_RBUTTONDOWN, suppressEnabled: true, touchpadContactOrGuardActive: true,
+            dwExtraInfo: 0, externalClickRecent: false, externalWheelRecent: false));
     }
 
     [Fact]

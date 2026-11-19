@@ -52,6 +52,7 @@ public sealed class HardwareInputManager : IDisposable
     public bool IsRawInputTouchpadRegistered => _rawInput.IsTouchpadRegistered;
     public bool IsRawInputMouseRegistered => _rawInput.IsMouseRegistered;
     public bool IsCursorSuppressionActive { get; private set; }
+    public bool SuppressTouchpadCursorEnabled { get; set; } = true;
     public bool HardwareTestMode { get; set; }
     public double MeasuredReportRateHz { get; private set; }
     public string ModeExplanation { get; private set; } = "Hardware discovery has not run yet.";
@@ -111,19 +112,26 @@ public sealed class HardwareInputManager : IDisposable
     {
         if (PrimaryTouchpad == null || !PrimaryTouchpad.Capabilities.HasUsableAbsoluteCoordinates)
         {
+            _mouseHook.SuppressTouchpadCursor = false;
             IsCursorSuppressionActive = false;
             return;
         }
 
+        bool driverSuppressed = false;
         if (enable && _isolationProvider.IsDriverAvailable)
         {
-            IsCursorSuppressionActive = _isolationProvider.TryEnableTouchpadCursorSuppression(PrimaryTouchpad.DevicePath);
+            driverSuppressed = _isolationProvider.TryEnableTouchpadCursorSuppression(PrimaryTouchpad.DevicePath);
         }
         else
         {
             _isolationProvider.DisableTouchpadCursorSuppression();
-            IsCursorSuppressionActive = false;
         }
+
+        // User-mode touchpad cursor suppression: swallows touchpad-synthesized cursor moves & tap-clicks
+        // during active Precision Touchpad HID contact while external USB/Bluetooth mice move freely.
+        bool userModeSuppressed = enable && SuppressTouchpadCursorEnabled && _mouseHook.IsInstalled;
+        _mouseHook.SuppressTouchpadCursor = userModeSuppressed;
+        IsCursorSuppressionActive = driverSuppressed || userModeSuppressed;
     }
 
     private void EvaluateOperationalMode()
@@ -157,10 +165,10 @@ public sealed class HardwareInputManager : IDisposable
         {
             CurrentMode = OperationalMode.CompatibleMode;
             ModeExplanation =
-                $"Mode B (Compatible Mode): Receiving verified absolute HID contact coordinates from " +
-                $"'{PrimaryTouchpad.Capabilities.DeviceName}' via Windows Raw Input. Because no signed HID filter driver " +
-                "is installed, Windows may also move the system cursor when touching the pad; use Shift or Right-Click " +
-                "Anchor Lock to freeze the Lens position while writing. External mouse operation remains 100% intact.";
+                $"Mode B (Active Touchpad Suppression): Receiving verified absolute HID contact coordinates from " +
+                $"'{PrimaryTouchpad.Capabilities.DeviceName}' via Windows Raw Input. While Doodle Mode is ON, " +
+                "touchpad cursor movement and tap-to-click are suppressed during finger contact so only your " +
+                "external mouse moves the cursor and Writing Lens.";
         }
     }
 
@@ -190,6 +198,22 @@ public sealed class HardwareInputManager : IDisposable
                 _contactBuffer,
                 out int reportedContacts);
 
+            bool anyTipDown = reportedContacts > 0;
+            if (!anyTipDown)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    if (_contactBuffer[i].TipSwitch)
+                    {
+                        anyTipDown = true;
+                        break;
+                    }
+                }
+            }
+
+            // Arm/refresh user-mode cursor suppression immediately upon real HID touchpad contact
+            _mouseHook.NotifyTouchpadActivity(anyTipDown);
+
             if (count > 0)
             {
                 TouchpadFrameReceived?.Invoke(new TouchpadFrameEvent(
@@ -204,36 +228,87 @@ public sealed class HardwareInputManager : IDisposable
 
     private void OnRawMouseReceived(in RawMousePacket packet)
     {
+        // Ignore synthetic/injected raw mouse packets (e.g. Windows PTP cursor synthesis where hDevice == 0)
+        if (packet.DeviceHandle == IntPtr.Zero)
+        {
+            return;
+        }
+
         _miceByHandle.TryGetValue(packet.DeviceHandle, out var mouse);
 
-        // Only treat wheel events from reliably identified external mice (or any mouse when no external mouse is classified)
-        bool allowMouseSource = mouse == null || mouse.IsExternalMouse || ExternalMice.Count == 0;
+        // Only treat events from reliably identified external mice (or a physical mouse handle when none are categorized)
+        bool isConfirmedExternal = mouse != null && mouse.IsExternalMouse;
+        bool allowMouseSource = isConfirmedExternal || (mouse == null && ExternalMice.Count == 0);
         if (!allowMouseSource)
         {
             return;
         }
 
-        if (packet.WheelDelta != 0)
+        bool hasMove = packet.DeltaX != 0 || packet.DeltaY != 0;
+        bool hasWheel = packet.WheelDelta != 0;
+
+        if (hasWheel)
         {
             ExternalMouseWheel?.Invoke(packet.WheelDelta);
         }
 
-        if (packet.DeltaX != 0 || packet.DeltaY != 0)
+        if (hasMove)
         {
             if (Win32Interop.GetCursorPos(out var pt))
             {
+                int targetX = pt.X;
+                int targetY = pt.Y;
+
+                // If the user moves their external mouse at the exact same instant a finger is touching
+                // the built-in touchpad (while WH_MOUSE_LL is swallowing touchpad moves), apply the
+                // external mouse's relative delta directly so the external mouse NEVER stalls.
+                if (isConfirmedExternal && _mouseHook.IsCurrentlySuppressingTouchpad)
+                {
+                    int vLeft = Win32Interop.GetSystemMetrics(Win32Interop.SM_XVIRTUALSCREEN);
+                    int vTop = Win32Interop.GetSystemMetrics(Win32Interop.SM_YVIRTUALSCREEN);
+                    int vWidth = Math.Max(1, Win32Interop.GetSystemMetrics(Win32Interop.SM_CXVIRTUALSCREEN));
+                    int vHeight = Math.Max(1, Win32Interop.GetSystemMetrics(Win32Interop.SM_CYVIRTUALSCREEN));
+
+                    targetX = Math.Clamp(pt.X + packet.DeltaX, vLeft, vLeft + vWidth - 1);
+                    targetY = Math.Clamp(pt.Y + packet.DeltaY, vTop, vTop + vHeight - 1);
+                    Win32Interop.SetCursorPos(targetX, targetY);
+                }
+
+                _mouseHook.NotifyExternalMouseActivity(
+                    hasMove: true,
+                    leftDown: packet.LeftButtonDown,
+                    leftUp: packet.LeftButtonUp,
+                    hasWheel: hasWheel,
+                    knownCursorX: targetX,
+                    knownCursorY: targetY);
+
                 ExternalMouseUpdated?.Invoke(new ExternalMouseEvent(
                     mouse,
-                    pt.X,
-                    pt.Y,
+                    targetX,
+                    targetY,
                     packet.WheelDelta,
                     _mouseHook.IsRightButtonHeld));
+                return;
             }
+        }
+
+        if (packet.LeftButtonDown || packet.LeftButtonUp || hasWheel)
+        {
+            _mouseHook.NotifyExternalMouseActivity(
+                hasMove: false,
+                leftDown: packet.LeftButtonDown,
+                leftUp: packet.LeftButtonUp,
+                hasWheel: hasWheel);
         }
     }
 
     private void OnHookCursorMoved(int physicalX, int physicalY)
     {
+        if (_mouseHook.IsCurrentlySuppressingTouchpad)
+        {
+            return;
+        }
+
         // Keep lens smoothly synced with cursor position when external mouse is moving
         ExternalMouseUpdated?.Invoke(new ExternalMouseEvent(
             null,

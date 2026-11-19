@@ -14,6 +14,10 @@ public static class Win32Interop
     public const int WM_INPUT = 0x00FF;
     public const int WM_HOTKEY = 0x0312;
     public const int WM_MOUSEWHEEL = 0x020A;
+    public const int WM_MOUSEHWHEEL = 0x020E;
+    public const int WM_LBUTTONDOWN = 0x0201;
+    public const int WM_LBUTTONUP = 0x0202;
+    public const int WM_LBUTTONDBLCLK = 0x0203;
     public const int WM_RBUTTONDOWN = 0x0204;
     public const int WM_RBUTTONUP = 0x0205;
     public const int WM_MOUSEMOVE = 0x0200;
@@ -56,6 +60,8 @@ public static class Win32Interop
     public const int GIDC_REMOVAL = 2;
 
     // --- Raw Mouse Button Flags ---
+    public const ushort RI_MOUSE_LEFT_BUTTON_DOWN = 0x0001;
+    public const ushort RI_MOUSE_LEFT_BUTTON_UP = 0x0002;
     public const ushort RI_MOUSE_RIGHT_BUTTON_DOWN = 0x0004;
     public const ushort RI_MOUSE_RIGHT_BUTTON_UP = 0x0008;
     public const ushort RI_MOUSE_WHEEL = 0x0400;
@@ -384,6 +390,10 @@ public static class Win32Interop
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool GetCursorPos(out POINT lpPoint);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool SetCursorPos(int X, int Y);
 
     [DllImport("user32.dll")]
     public static extern short GetAsyncKeyState(int vKey);

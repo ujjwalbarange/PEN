@@ -9,7 +9,9 @@ public readonly record struct RawMousePacket(
     int DeltaY,
     short WheelDelta,
     bool RightButtonDown,
-    bool RightButtonUp);
+    bool RightButtonUp,
+    bool LeftButtonDown = false,
+    bool LeftButtonUp = false);
 
 public delegate void RawHidPacketHandler(IntPtr deviceHandle, IntPtr reportPtr, uint reportSize, uint reportCount);
 public delegate void RawMousePacketHandler(in RawMousePacket packet);
@@ -150,6 +152,8 @@ public sealed class RawInputManager : IDisposable
         {
             var mouse = Marshal.PtrToStructure<Win32Interop.RAWMOUSE>(payloadPtr);
             short wheelDelta = (mouse.usButtonFlags & Win32Interop.RI_MOUSE_WHEEL) != 0 ? mouse.usButtonData : (short)0;
+            bool leftDown = (mouse.usButtonFlags & Win32Interop.RI_MOUSE_LEFT_BUTTON_DOWN) != 0;
+            bool leftUp = (mouse.usButtonFlags & Win32Interop.RI_MOUSE_LEFT_BUTTON_UP) != 0;
             bool rightDown = (mouse.usButtonFlags & Win32Interop.RI_MOUSE_RIGHT_BUTTON_DOWN) != 0;
             bool rightUp = (mouse.usButtonFlags & Win32Interop.RI_MOUSE_RIGHT_BUTTON_UP) != 0;
 
@@ -159,7 +163,9 @@ public sealed class RawInputManager : IDisposable
                 mouse.lLastY,
                 wheelDelta,
                 rightDown,
-                rightUp);
+                rightUp,
+                leftDown,
+                leftUp);
 
             RawMouseReceived?.Invoke(in packet);
         }
