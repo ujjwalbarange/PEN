@@ -41,7 +41,8 @@ public enum DrawingTool
 {
     Pen,
     Highlighter,
-    Laser
+    Laser,
+    Eraser
 }
 
 public enum StrokeThicknessPreset

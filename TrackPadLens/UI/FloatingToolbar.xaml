@@ -77,70 +77,90 @@
                 <Border Width="1" Height="18" Background="#334155" Margin="5,0"/>
 
                 <!-- 2. Pen Colors: Red, Blue, Yellow Highlighter (40%), White, Black -->
-                <Button x:Name="ColorRedBtn" Style="{StaticResource ColorBtn}" ToolTip="Red Pen (#FF3B30)" Click="ColorRedBtn_Click">
+                <Button x:Name="ColorRedBtn" Style="{StaticResource ColorBtn}" ToolTip="Red Pen (#FF3B30) — Press D to select/cycle pen" Click="ColorRedBtn_Click">
                     <Ellipse Width="14" Height="14" Fill="#FF3B30"/>
                 </Button>
-                <Button x:Name="ColorBlueBtn" Style="{StaticResource ColorBtn}" ToolTip="Blue Pen (#007AFF)" Click="ColorBlueBtn_Click">
+                <Button x:Name="ColorBlueBtn" Style="{StaticResource ColorBtn}" ToolTip="Blue Pen (#007AFF) — Press D to select/cycle pen" Click="ColorBlueBtn_Click">
                     <Ellipse Width="14" Height="14" Fill="#007AFF"/>
                 </Button>
                 <Button x:Name="ColorHighlighterBtn" Style="{StaticResource ColorBtn}" ToolTip="Yellow Highlighter (#FFCC00 40%)" Click="ColorHighlighterBtn_Click">
                     <Ellipse Width="14" Height="14" Fill="#FFCC00" Opacity="0.7" Stroke="#FFCC00" StrokeThickness="1"/>
                 </Button>
-                <Button x:Name="ColorWhiteBtn" Style="{StaticResource ColorBtn}" ToolTip="White Pen" Click="ColorWhiteBtn_Click">
+                <Button x:Name="ColorWhiteBtn" Style="{StaticResource ColorBtn}" ToolTip="White Pen — Press D to select/cycle pen" Click="ColorWhiteBtn_Click">
                     <Ellipse Width="14" Height="14" Fill="#FFFFFF" Stroke="#475569" StrokeThickness="1"/>
                 </Button>
-                <Button x:Name="ColorBlackBtn" Style="{StaticResource ColorBtn}" ToolTip="Black Pen" Click="ColorBlackBtn_Click">
+                <Button x:Name="ColorBlackBtn" Style="{StaticResource ColorBtn}" ToolTip="Black Pen — Press D to select/cycle pen" Click="ColorBlackBtn_Click">
                     <Ellipse Width="14" Height="14" Fill="#000000" Stroke="#94A3B8" StrokeThickness="1"/>
                 </Button>
 
                 <Border Width="1" Height="18" Background="#334155" Margin="5,0"/>
 
-                <!-- 3. Stroke Thickness -->
-                <Button x:Name="ThickThinBtn" Style="{StaticResource ColorBtn}" ToolTip="Thin Stroke (2px)" Click="ThickThinBtn_Click">
+                <!-- 3. Stroke Thickness (1 / 2 / 3 in Doodle Mode) -->
+                <Button x:Name="ThickThinBtn" Style="{StaticResource ColorBtn}" ToolTip="Thin Stroke (2px) [1]" Click="ThickThinBtn_Click">
                     <Ellipse Width="4" Height="4" Fill="#E2E8F0"/>
                 </Button>
-                <Button x:Name="ThickMedBtn" Style="{StaticResource ColorBtn}" ToolTip="Medium Stroke (4px)" Click="ThickMedBtn_Click">
+                <Button x:Name="ThickMedBtn" Style="{StaticResource ColorBtn}" ToolTip="Medium Stroke (4px) [2]" Click="ThickMedBtn_Click">
                     <Ellipse Width="8" Height="8" Fill="#E2E8F0"/>
                 </Button>
-                <Button x:Name="ThickHeavyBtn" Style="{StaticResource ColorBtn}" ToolTip="Thick Stroke (7px)" Click="ThickHeavyBtn_Click">
+                <Button x:Name="ThickHeavyBtn" Style="{StaticResource ColorBtn}" ToolTip="Thick Stroke (7px) [3]" Click="ThickHeavyBtn_Click">
                     <Ellipse Width="12" Height="12" Fill="#E2E8F0"/>
                 </Button>
 
                 <Border Width="1" Height="18" Background="#334155" Margin="5,0"/>
 
-                <!-- 4. Laser Mode -->
+                <!-- 4. Stroke Eraser (E in Doodle Mode) -->
+                <Button x:Name="EraserBtn" Style="{StaticResource ToolBtn}" ToolTip="Stroke Eraser — erases whole line on contact [E]" Click="EraserBtn_Click">
+                    <Canvas Width="16" Height="16">
+                        <Path Data="M 3,11 L 9,4 L 14,9 L 10,13 L 5,13 Z" Stroke="#F8FAFC" StrokeThickness="1.4" Fill="#334155" StrokeLineJoin="Round"/>
+                        <Line X1="7" Y1="6.5" X2="11.5" Y2="11" Stroke="#F8FAFC" StrokeThickness="1.2"/>
+                    </Canvas>
+                </Button>
+
+                <!-- 5. Laser Mode -->
                 <Button x:Name="LaserBtn" Style="{StaticResource ToolBtn}" ToolTip="Laser Pointer (1.5s fade)" Click="LaserBtn_Click">
                     <TextBlock Text="✦" FontSize="14" Foreground="#FF453A"/>
                 </Button>
 
-                <!-- 5. Undo -->
-                <Button Style="{StaticResource ToolBtn}" ToolTip="Undo Last Stroke (Ctrl+Z)" Click="UndoBtn_Click">
+                <!-- 6. Undo -->
+                <Button Style="{StaticResource ToolBtn}" ToolTip="Undo Last Action (Ctrl+Z)" Click="UndoBtn_Click">
                     <TextBlock Text="↶" FontSize="15"/>
                 </Button>
 
-                <!-- 6. Clear -->
-                <Button Style="{StaticResource ToolBtn}" ToolTip="Clear All Ink (Esc)" Click="ClearBtn_Click">
+                <!-- 7. Clear -->
+                <Button Style="{StaticResource ToolBtn}" ToolTip="Clear All Ink [C in Doodle Mode]" Click="ClearBtn_Click">
                     <TextBlock Text="✕" FontSize="13"/>
                 </Button>
 
-                <!-- 7. Save Snapshot -->
+                <!-- 8. Save Snapshot -->
                 <Button Style="{StaticResource ToolBtn}" ToolTip="Save Snapshot (Ctrl+S)" Click="SnapshotBtn_Click">
                     <TextBlock Text="⬒" FontSize="14"/>
                 </Button>
 
                 <Border Width="1" Height="18" Background="#334155" Margin="5,0"/>
 
-                <!-- 8. Calibration -->
+                <!-- 9. Lens Size Lock / Unlock (stops mouse wheel from resizing Lens) -->
+                <Button x:Name="SizeLockBtn" Style="{StaticResource ToolBtn}" ToolTip="Lock Lens Size (prevent mouse wheel resize)" Click="SizeLockBtn_Click">
+                    <Canvas Width="16" Height="16">
+                        <!-- Locked padlock shackle -->
+                        <Path x:Name="LockClosedShackle" Data="M 5,7 V 5 A 3,3 0 0 1 11,5 V 7" Stroke="#00D2FF" StrokeThickness="1.5" Visibility="Collapsed"/>
+                        <!-- Unlocked padlock shackle -->
+                        <Path x:Name="LockOpenShackle" Data="M 5,7 V 5 A 3,3 0 0 1 11,4.2" Stroke="#94A3B8" StrokeThickness="1.5" Visibility="Visible"/>
+                        <!-- Padlock body -->
+                        <Rectangle x:Name="LockBody" Canvas.Left="3.5" Canvas.Top="7" Width="9" Height="6.8" RadiusX="1.6" RadiusY="1.6" Stroke="#94A3B8" StrokeThickness="1.4" Fill="Transparent"/>
+                    </Canvas>
+                </Button>
+
+                <!-- 10. Calibration -->
                 <Button Style="{StaticResource ToolBtn}" ToolTip="Touchpad Calibration" Click="CalibrationBtn_Click">
                     <TextBlock Text="⊞" FontSize="14"/>
                 </Button>
 
-                <!-- 9. Settings -->
-                <Button Style="{StaticResource ToolBtn}" ToolTip="Settings &amp; Diagnostics" Click="SettingsBtn_Click">
+                <!-- 11. Settings -->
+                <Button Style="{StaticResource ToolBtn}" ToolTip="Settings &amp; Lens Appearance" Click="SettingsBtn_Click">
                     <TextBlock Text="⚙" FontSize="14"/>
                 </Button>
 
-                <!-- 10. Minimize to Tray -->
+                <!-- 12. Minimize to Tray -->
                 <Button Style="{StaticResource ToolBtn}" ToolTip="Minimize to System Tray" Click="TrayBtn_Click">
                     <TextBlock Text="▁" FontSize="12"/>
                 </Button>

@@ -207,13 +207,8 @@ public sealed class MouseHookManager : IDisposable
                 // Swallow accidental touchpad tap-to-click while writing, never real external mouse clicks
                 return (touchpadContactOrGuardActive || isTouchSynthesizedExtra) && !externalClickRecent;
 
-            case Win32Interop.WM_MOUSEWHEEL:
-            case Win32Interop.WM_MOUSEHWHEEL:
-                // Swallow accidental 2-finger touchpad scrolling while writing, never external mouse wheel
-                return touchpadContactOrGuardActive && !externalWheelRecent;
-
             default:
-                // Never suppress right-click (Anchor Lock / context menus) or other buttons
+                // Never suppress 2-finger scroll (so slides/PDFs still scroll), right-click (Anchor Lock), or other buttons
                 return false;
         }
     }

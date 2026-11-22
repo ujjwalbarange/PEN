@@ -35,6 +35,7 @@ public partial class App : Application
 
     private AppSettings _settings = new();
     private bool _doodleModeEnabled;
+    private bool _modalDialogOpen;
     private bool _rightButtonAnchorLock;
     private double _currentLensWidthDip = 420.0;
     private double _lastCursorDipX = 500.0;
@@ -108,12 +109,27 @@ public partial class App : Application
         _hardware.Initialize();
 
         // 2. Ink & Processing Engine
+        var savedPenColor = ParseColorOrDefault(_settings.PenColorHex, InkEngine.PenRed);
         _inkEngine = new InkEngine
         {
-            ActiveTool = _settings.ActiveTool,
-            ThicknessPreset = _settings.ThicknessPreset,
-            ActiveColor = ParseColorOrDefault(_settings.PenColorHex, InkEngine.PenRed)
+            ThicknessPreset = _settings.ThicknessPreset
         };
+        _inkEngine.SetInitialPenColor(savedPenColor);
+        switch (_settings.ActiveTool)
+        {
+            case DrawingTool.Highlighter:
+                _inkEngine.SelectHighlighter();
+                break;
+            case DrawingTool.Laser:
+                _inkEngine.SelectLaser();
+                break;
+            case DrawingTool.Eraser:
+                _inkEngine.SelectEraser();
+                break;
+            default:
+                _inkEngine.SelectPen(savedPenColor);
+                break;
+        }
 
         var filter = new OneEuroFilter2D(_settings.OneEuroMinCutoff, _settings.OneEuroBeta, _settings.OneEuroDCutoff);
         var palm = new PalmRejection();
@@ -124,6 +140,9 @@ public partial class App : Application
         _overlayWindow = new OverlayWindow();
         _overlayWindow.BindInkEngine(_inkEngine);
         _overlayWindow.ApplyMonitorScope(_settings.MonitorScope);
+        _overlayWindow.ApplyLensAppearance(
+            ParseColorOrDefault(_settings.LensBorderColorHex, Color.FromRgb(0x00, 0xD2, 0xFF)),
+            _settings.LensBorderOpacity);
         _overlayWindow.Show();
 
         _strokeProcessor.HoverDotChanged += dot => _overlayWindow.UpdateHoverDot(in dot);
@@ -232,6 +251,19 @@ public partial class App : Application
             SaveSettings();
             SyncToolbar();
         };
+        _toolbar.EraserSelected += () =>
+        {
+            _inkEngine.SelectEraser();
+            _settings.ActiveTool = DrawingTool.Eraser;
+            SaveSettings();
+            SyncToolbar();
+        };
+        _toolbar.ToggleSizeLockRequested += () =>
+        {
+            _settings.LensSizeLocked = !_settings.LensSizeLocked;
+            SaveSettings();
+            SyncToolbar();
+        };
         _toolbar.UndoRequested += () => _inkEngine.Undo();
         _toolbar.ClearRequested += HandleClearInk;
         _toolbar.SaveSnapshotRequested += CaptureSnapshot;
@@ -289,7 +321,7 @@ public partial class App : Application
 
     private void OnExternalMouseWheel(int wheelDelta)
     {
-        if (!_doodleModeEnabled || _overlayWindow == null || _calibrationManager == null) return;
+        if (!_doodleModeEnabled || _settings.LensSizeLocked || _overlayWindow == null || _calibrationManager == null) return;
 
         var viewport = _overlayWindow.GetViewportBoundsDip();
         _currentLensWidthDip = _calibrationManager.ScaleLensWidth(_currentLensWidthDip, wheelDelta, viewport.Width);
@@ -347,6 +379,7 @@ public partial class App : Application
         }
 
         _hardware?.SetDoodleModeCursorIsolation(enable);
+        UpdateDoodleModeHotkeys(enable && !_modalDialogOpen);
         _overlayWindow?.SetLensVisibility(enable);
         _trayService?.UpdateDoodleState(enable);
         SyncToolbar();
@@ -373,7 +406,53 @@ public partial class App : Application
                 CaptureSnapshot();
                 break;
             case HotkeyAction.ClearInk:
-                HandleClearInk();
+                if (_doodleModeEnabled) HandleClearInk();
+                break;
+            case HotkeyAction.DoodleSelectEraser:
+                if (_doodleModeEnabled && _inkEngine != null)
+                {
+                    _inkEngine.SelectEraser();
+                    _settings.ActiveTool = DrawingTool.Eraser;
+                    SaveSettings();
+                    SyncToolbar();
+                }
+                break;
+            case HotkeyAction.DoodleThicknessThin:
+                if (_doodleModeEnabled && _inkEngine != null)
+                {
+                    _inkEngine.ThicknessPreset = StrokeThicknessPreset.Thin;
+                    _settings.ThicknessPreset = StrokeThicknessPreset.Thin;
+                    SaveSettings();
+                    SyncToolbar();
+                }
+                break;
+            case HotkeyAction.DoodleThicknessMedium:
+                if (_doodleModeEnabled && _inkEngine != null)
+                {
+                    _inkEngine.ThicknessPreset = StrokeThicknessPreset.Medium;
+                    _settings.ThicknessPreset = StrokeThicknessPreset.Medium;
+                    SaveSettings();
+                    SyncToolbar();
+                }
+                break;
+            case HotkeyAction.DoodleThicknessThick:
+                if (_doodleModeEnabled && _inkEngine != null)
+                {
+                    _inkEngine.ThicknessPreset = StrokeThicknessPreset.Thick;
+                    _settings.ThicknessPreset = StrokeThicknessPreset.Thick;
+                    SaveSettings();
+                    SyncToolbar();
+                }
+                break;
+            case HotkeyAction.DoodlePenCycle:
+                if (_doodleModeEnabled && _inkEngine != null)
+                {
+                    var penColor = _inkEngine.SelectOrCyclePen();
+                    _settings.ActiveTool = DrawingTool.Pen;
+                    _settings.PenColorHex = $"#{penColor.R:X2}{penColor.G:X2}{penColor.B:X2}";
+                    SaveSettings();
+                    SyncToolbar();
+                }
                 break;
         }
     }
@@ -426,40 +505,91 @@ public partial class App : Application
         _hotkeys.Register(HotkeyAction.ToggleDoodleMode, _settings.HotkeyToggleDoodle);
         _hotkeys.Register(HotkeyAction.Undo, _settings.HotkeyUndo);
         _hotkeys.Register(HotkeyAction.SaveSnapshot, _settings.HotkeySaveSnapshot);
-        _hotkeys.Register(HotkeyAction.ClearInk, _settings.HotkeyClearInk);
+        UpdateDoodleModeHotkeys(_doodleModeEnabled && !_modalDialogOpen);
+    }
+
+    /// <summary>
+    /// Registers single-key drawing bindings (E, 1, 2, 3, D, and Clear Ink [default C])
+    /// ONLY while Doodle Mode is ON and no modal Settings/Calibration dialog is open,
+    /// so normal typing in other apps or settings fields is never intercepted.
+    /// </summary>
+    private void UpdateDoodleModeHotkeys(bool enable)
+    {
+        if (_hotkeys == null) return;
+
+        _hotkeys.Unregister(HotkeyAction.DoodleSelectEraser);
+        _hotkeys.Unregister(HotkeyAction.DoodleThicknessThin);
+        _hotkeys.Unregister(HotkeyAction.DoodleThicknessMedium);
+        _hotkeys.Unregister(HotkeyAction.DoodleThicknessThick);
+        _hotkeys.Unregister(HotkeyAction.DoodlePenCycle);
+        _hotkeys.Unregister(HotkeyAction.ClearInk);
+
+        if (!enable) return;
+
+        _hotkeys.Register(HotkeyAction.DoodleSelectEraser, "E");
+        _hotkeys.Register(HotkeyAction.DoodleThicknessThin, "1");
+        _hotkeys.Register(HotkeyAction.DoodleThicknessMedium, "2");
+        _hotkeys.Register(HotkeyAction.DoodleThicknessThick, "3");
+        _hotkeys.Register(HotkeyAction.DoodlePenCycle, "D");
+        _hotkeys.Register(HotkeyAction.ClearInk, string.IsNullOrWhiteSpace(_settings.HotkeyClearInk) ? "C" : _settings.HotkeyClearInk);
     }
 
     private void OpenCalibrationWindow()
     {
-        var win = new CalibrationWindow(_hardware?.PrimaryTouchpad?.Capabilities, _settings.Calibration, updated =>
+        _modalDialogOpen = true;
+        UpdateDoodleModeHotkeys(false);
+        try
         {
-            _settings.Calibration = updated;
-            SaveSettings();
-            UpdateLensPositionFromLastCursor();
+            var win = new CalibrationWindow(_hardware?.PrimaryTouchpad?.Capabilities, _settings.Calibration, updated =>
+            {
+                _settings.Calibration = updated;
+                SaveSettings();
+                UpdateLensPositionFromLastCursor();
+                _mainWindow?.RefreshDiagnostics();
+            });
+            win.ShowDialog();
+        }
+        finally
+        {
+            _modalDialogOpen = false;
+            UpdateDoodleModeHotkeys(_doodleModeEnabled);
             _mainWindow?.RefreshDiagnostics();
-        });
-        win.ShowDialog();
+        }
     }
 
     private void OpenSettingsWindow()
     {
-        var win = new SettingsWindow(_settings, updated =>
+        _modalDialogOpen = true;
+        UpdateDoodleModeHotkeys(false);
+        try
         {
-            _settings = updated;
-            SaveSettings();
-            if (_hardware != null)
+            var win = new SettingsWindow(_settings, updated =>
             {
-                _hardware.SuppressTouchpadCursorEnabled = _settings.SuppressTouchpadCursorInDoodleMode;
-                _hardware.SetDoodleModeCursorIsolation(_doodleModeEnabled);
-            }
-            _strokeProcessor?.ApplySettings(_settings);
-            _overlayWindow?.ApplyMonitorScope(_settings.MonitorScope);
-            RegisterConfiguredHotkeys();
-            OnStartWithWindowsToggled(_settings.StartWithWindows);
-            UpdateLensPositionFromLastCursor();
+                _settings = updated;
+                SaveSettings();
+                if (_hardware != null)
+                {
+                    _hardware.SuppressTouchpadCursorEnabled = _settings.SuppressTouchpadCursorInDoodleMode;
+                    _hardware.SetDoodleModeCursorIsolation(_doodleModeEnabled);
+                }
+                _strokeProcessor?.ApplySettings(_settings);
+                _overlayWindow?.ApplyMonitorScope(_settings.MonitorScope);
+                _overlayWindow?.ApplyLensAppearance(
+                    ParseColorOrDefault(_settings.LensBorderColorHex, Color.FromRgb(0x00, 0xD2, 0xFF)),
+                    _settings.LensBorderOpacity);
+                RegisterConfiguredHotkeys();
+                OnStartWithWindowsToggled(_settings.StartWithWindows);
+                UpdateLensPositionFromLastCursor();
+                _mainWindow?.RefreshDiagnostics();
+            });
+            win.ShowDialog();
+        }
+        finally
+        {
+            _modalDialogOpen = false;
+            UpdateDoodleModeHotkeys(_doodleModeEnabled);
             _mainWindow?.RefreshDiagnostics();
-        });
-        win.ShowDialog();
+        }
     }
 
     private void OnStartWithWindowsToggled(bool enable)
@@ -491,7 +621,8 @@ public partial class App : Application
             _inkEngine.ActiveTool,
             _inkEngine.ActiveColor,
             _inkEngine.ThicknessPreset,
-            _settings.CompactToolbar);
+            _settings.CompactToolbar,
+            _settings.LensSizeLocked);
     }
 
     private void SaveSettings() => _configService?.Save(_settings);

@@ -182,9 +182,13 @@ public sealed class HidDescriptorAndSystemTests
         Assert.False(MouseHookManager.ShouldSuppressHookEvent(
             Win32Interop.WM_LBUTTONDOWN, suppressEnabled: true, touchpadContactOrGuardActive: true,
             dwExtraInfo: 0, externalClickRecent: true, externalWheelRecent: false));
+        // Wheel scrolling (external mouse OR 2-finger touchpad scroll) passes through so PDFs/slides scroll smoothly
         Assert.False(MouseHookManager.ShouldSuppressHookEvent(
             Win32Interop.WM_MOUSEWHEEL, suppressEnabled: true, touchpadContactOrGuardActive: true,
             dwExtraInfo: 0, externalClickRecent: false, externalWheelRecent: true));
+        Assert.False(MouseHookManager.ShouldSuppressHookEvent(
+            Win32Interop.WM_MOUSEWHEEL, suppressEnabled: true, touchpadContactOrGuardActive: true,
+            dwExtraInfo: 0, externalClickRecent: false, externalWheelRecent: false));
 
         // Right-click (Anchor Lock / context menus) is never suppressed
         Assert.False(MouseHookManager.ShouldSuppressHookEvent(
@@ -221,6 +225,27 @@ public sealed class HidDescriptorAndSystemTests
         Assert.True(HotkeyManager.TryParseShortcut("Esc", out var esc));
         Assert.Equal(0u, esc.Modifiers);
 
+        // Single-key Doodle-Mode shortcuts: E, 1, 2, 3, D, C
+        Assert.True(HotkeyManager.TryParseShortcut("E", out var keyE));
+        Assert.Equal(0u, keyE.Modifiers);
+        Assert.Equal("E", keyE.DisplayString);
+
+        Assert.True(HotkeyManager.TryParseShortcut("1", out var key1));
+        Assert.Equal(0u, key1.Modifiers);
+        Assert.Equal("1", key1.DisplayString);
+
+        Assert.True(HotkeyManager.TryParseShortcut("2", out var key2));
+        Assert.Equal("2", key2.DisplayString);
+
+        Assert.True(HotkeyManager.TryParseShortcut("3", out var key3));
+        Assert.Equal("3", key3.DisplayString);
+
+        Assert.True(HotkeyManager.TryParseShortcut("D", out var keyD));
+        Assert.Equal("D", keyD.DisplayString);
+
+        Assert.True(HotkeyManager.TryParseShortcut("C", out var keyC));
+        Assert.Equal("C", keyC.DisplayString);
+
         Assert.False(HotkeyManager.TryParseShortcut("Ctrl+Alt+", out _));
         Assert.False(HotkeyManager.TryParseShortcut("A+B", out _));
     }
@@ -234,26 +259,40 @@ public sealed class HidDescriptorAndSystemTests
     }
 
     [Fact]
-    public void ConfigurationService_RoundTripsSettingsSafely()
+    public void ConfigurationService_RoundTripsSettingsAndMigratesLegacyEscapeClearHotkey()
     {
         string tempFile = Path.Combine(Path.GetTempPath(), $"tpl_test_{Guid.NewGuid():N}.json");
         try
         {
+            // Simulate a v1 config.json saved before SettingsVersion existed (with Escape as Clear hotkey)
+            File.WriteAllText(tempFile, "{\"HotkeyClearInk\":\"Escape\",\"DefaultLensWidthDip\":460}");
             var svc = new ConfigurationService(tempFile);
+            var migrated = svc.Load();
+            Assert.Equal("C", migrated.HotkeyClearInk);
+            Assert.Equal(AppSettings.CurrentSettingsVersion, migrated.SettingsVersion);
+
             var original = new AppSettings
             {
                 AnchorMode = AnchorMode.TopLeft,
                 DefaultLensWidthDip = 520,
+                LensSizeLocked = true,
+                LensBorderColorHex = "#10B981",
+                LensBorderOpacity = 0.65,
                 OneEuroMinCutoff = 2.4,
-                HotkeyToggleDoodle = "Alt+W"
+                HotkeyToggleDoodle = "Alt+W",
+                HotkeyClearInk = "C"
             };
             svc.Save(original);
 
             var reloaded = svc.Load();
             Assert.Equal(AnchorMode.TopLeft, reloaded.AnchorMode);
             Assert.Equal(520, reloaded.DefaultLensWidthDip);
+            Assert.True(reloaded.LensSizeLocked);
+            Assert.Equal("#10B981", reloaded.LensBorderColorHex);
+            Assert.Equal(0.65, reloaded.LensBorderOpacity, 4);
             Assert.Equal(2.4, reloaded.OneEuroMinCutoff, 4);
             Assert.Equal("Alt+W", reloaded.HotkeyToggleDoodle);
+            Assert.Equal("C", reloaded.HotkeyClearInk);
         }
         finally
         {

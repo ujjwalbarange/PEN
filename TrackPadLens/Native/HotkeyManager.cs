@@ -9,7 +9,12 @@ public enum HotkeyAction
     ToggleDoodleMode = 1001,
     Undo = 1002,
     SaveSnapshot = 1003,
-    ClearInk = 1004
+    ClearInk = 1004,
+    DoodleSelectEraser = 1005,
+    DoodleThicknessThin = 1006,
+    DoodleThicknessMedium = 1007,
+    DoodleThicknessThick = 1008,
+    DoodlePenCycle = 1009
 }
 
 public readonly record struct HotkeyBinding(uint Modifiers, uint VirtualKey, string DisplayString);
@@ -110,6 +115,7 @@ public sealed class HotkeyManager : IDisposable
                 _activeCombos.Remove((binding.Modifiers, binding.VirtualKey));
             }
         }
+        _statuses.Remove(action);
     }
 
     public void UnregisterAll()
@@ -123,6 +129,7 @@ public sealed class HotkeyManager : IDisposable
         }
         _registeredIds.Clear();
         _activeCombos.Clear();
+        _statuses.Clear();
     }
 
     /// <summary>
@@ -166,7 +173,13 @@ public sealed class HotkeyManager : IDisposable
             else
             {
                 if (vk != 0) return false; // More than one primary key
+                string displayToken = token;
                 if (token.Equals("Esc", StringComparison.OrdinalIgnoreCase)) token = "Escape";
+                else if (token.Length == 1 && token[0] >= '0' && token[0] <= '9')
+                {
+                    displayToken = token;
+                    token = "D" + token;
+                }
 
                 if (!Enum.TryParse<Key>(token, ignoreCase: true, out var wpfKey) || wpfKey == Key.None)
                 {
@@ -175,7 +188,7 @@ public sealed class HotkeyManager : IDisposable
 
                 vk = (uint)KeyInterop.VirtualKeyFromKey(wpfKey);
                 if (vk == 0) return false;
-                normalizedTokens.Add(wpfKey.ToString());
+                normalizedTokens.Add(displayToken.Length == 1 && char.IsDigit(displayToken[0]) ? displayToken : wpfKey.ToString());
             }
         }
 

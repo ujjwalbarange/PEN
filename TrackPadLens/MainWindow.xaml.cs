@@ -163,7 +163,10 @@ public partial class MainWindow : Window
 
         int registered = _hotkeys.Statuses.Values.Count(s => s.Registered);
         int total = _hotkeys.Statuses.Count;
-        HotkeyStatusText.Text = $"{registered}/{total} active ({settings.HotkeyToggleDoodle}, {settings.HotkeyUndo}, {settings.HotkeySaveSnapshot}, {settings.HotkeyClearInk})";
+        string doodleKeys = doodleOn
+            ? $" + Doodle: E, 1/2/3, D, {settings.HotkeyClearInk}"
+            : $" (Doodle keys E/1/2/3/D/{settings.HotkeyClearInk} armed when ON)";
+        HotkeyStatusText.Text = $"{registered}/{total} active ({settings.HotkeyToggleDoodle}, {settings.HotkeyUndo}, {settings.HotkeySaveSnapshot}){doodleKeys}";
     }
 
     protected override void OnClosing(CancelEventArgs e)

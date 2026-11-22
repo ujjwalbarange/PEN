@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="TrackPadLens — Settings"
         Width="560"
-        Height="610"
+        Height="680"
         Background="#0F172A"
         Foreground="#E2E8F0"
         WindowStartupLocation="CenterScreen"
@@ -43,7 +43,7 @@
                     <TextBox x:Name="OffsetYBox" Grid.Column="2" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
                 </Grid>
 
-                <Grid Margin="0,0,0,14">
+                <Grid Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="190"/>
                         <ColumnDefinition Width="*"/>
@@ -53,6 +53,35 @@
                         <ComboBoxItem Content="Primary Monitor Only" Tag="PrimaryOnly"/>
                         <ComboBoxItem Content="All Monitors (Virtual Screen)" Tag="AllMonitors"/>
                     </ComboBox>
+                </Grid>
+
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="190"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Lens Box Color" VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Width="22" Height="22" Margin="0,0,5,0" Background="#00D2FF" BorderBrush="#475569" Tag="#00D2FF" ToolTip="Cyan (#00D2FF)" Click="LensPreset_Click"/>
+                        <Button Width="22" Height="22" Margin="0,0,5,0" Background="#10B981" BorderBrush="#475569" Tag="#10B981" ToolTip="Emerald (#10B981)" Click="LensPreset_Click"/>
+                        <Button Width="22" Height="22" Margin="0,0,5,0" Background="#F59E0B" BorderBrush="#475569" Tag="#F59E0B" ToolTip="Amber (#F59E0B)" Click="LensPreset_Click"/>
+                        <Button Width="22" Height="22" Margin="0,0,5,0" Background="#FF3B30" BorderBrush="#475569" Tag="#FF3B30" ToolTip="Red (#FF3B30)" Click="LensPreset_Click"/>
+                        <Button Width="22" Height="22" Margin="0,0,5,0" Background="#A855F7" BorderBrush="#475569" Tag="#A855F7" ToolTip="Purple (#A855F7)" Click="LensPreset_Click"/>
+                        <Button Width="22" Height="22" Margin="0,0,8,0" Background="#FFFFFF" BorderBrush="#475569" Tag="#FFFFFF" ToolTip="White (#FFFFFF)" Click="LensPreset_Click"/>
+                        <TextBox x:Name="LensColorBox" Width="88" Padding="6,3" FontFamily="Consolas" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155" TextChanged="LensColorBox_TextChanged"/>
+                        <Border x:Name="LensColorPreview" Width="26" Height="22" Margin="6,0,0,0" CornerRadius="3" BorderBrush="#64748B" BorderThickness="1" Background="#00D2FF"/>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="190"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="52"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Lens Box Opacity" VerticalAlignment="Center"/>
+                    <Slider x:Name="LensOpacitySlider" Grid.Column="1" Minimum="0.15" Maximum="1.0" Value="1.0" SmallChange="0.05" LargeChange="0.1" ValueChanged="OnLensOpacityChanged"/>
+                    <TextBlock x:Name="LensOpacityVal" Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" VerticalAlignment="Center"/>
                 </Grid>
 
                 <TextBlock Text="1-Euro Smoothing Filter" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,4,0,8"/>
@@ -124,14 +153,16 @@
                     <TextBlock Text="Save Snapshot" VerticalAlignment="Center"/>
                     <TextBox x:Name="HotkeySnapshotBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
                 </Grid>
-                <Grid Margin="0,0,0,14">
+                <Grid Margin="0,0,0,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="190"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Clear All Ink" VerticalAlignment="Center"/>
+                    <TextBlock Text="Clear All Ink (Doodle Mode)" VerticalAlignment="Center"/>
                     <TextBox x:Name="HotkeyClearBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
                 </Grid>
+                <TextBlock Text="Doodle-Mode-only quick keys (active only while Doodle Mode is ON): E = Stroke Eraser · 1 / 2 / 3 = Thin / Medium / Thick · D = Pen / Cycle Pen Colors · C = Clear All"
+                           Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12"/>
 
                 <CheckBox x:Name="SuppressTouchpadCursorCheck" Content="Suppress built-in touchpad cursor movement while Doodle Mode is ON (external mouse moves cursor freely)" Foreground="#E2E8F0" Margin="0,4,0,8"/>
                 <CheckBox x:Name="StartWithWindowsCheck" Content="Start TrackPadLens with Windows (current user registry key, no admin required)" Foreground="#E2E8F0" Margin="0,0,0,8"/>

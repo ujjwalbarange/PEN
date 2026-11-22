@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using TrackPadLens.Models;
 
 namespace TrackPadLens.UI;
@@ -24,6 +26,10 @@ public partial class SettingsWindow : Window
         OffsetYBox.Text = _settings.AnchorOffsetY.ToString("F0", CultureInfo.InvariantCulture);
         MonitorScopeCombo.SelectedIndex = _settings.MonitorScope == MonitorScope.AllMonitors ? 1 : 0;
 
+        LensColorBox.Text = _settings.LensBorderColorHex;
+        LensOpacitySlider.Value = _settings.LensBorderOpacity;
+        UpdateLensAppearancePreview();
+
         MinCutoffSlider.Value = _settings.OneEuroMinCutoff;
         BetaSlider.Value = _settings.OneEuroBeta;
         DCutoffSlider.Value = _settings.OneEuroDCutoff;
@@ -40,6 +46,47 @@ public partial class SettingsWindow : Window
 
         SuppressTouchpadCursorCheck.IsChecked = _settings.SuppressTouchpadCursorInDoodleMode;
         StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
+    }
+
+    private void LensPreset_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.Tag is string hex)
+        {
+            LensColorBox.Text = hex;
+            UpdateLensAppearancePreview();
+        }
+    }
+
+    private void LensColorBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (!IsLoaded) return;
+        UpdateLensAppearancePreview();
+    }
+
+    private void OnLensOpacityChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsLoaded) return;
+        UpdateLensAppearancePreview();
+    }
+
+    private void UpdateLensAppearancePreview()
+    {
+        double opacity = Math.Clamp(LensOpacitySlider.Value, 0.15, 1.0);
+        LensOpacityVal.Text = $"{(int)Math.Round(opacity * 100)}%";
+        LensColorPreview.Opacity = opacity;
+
+        try
+        {
+            string raw = LensColorBox.Text.Trim();
+            if (!string.IsNullOrWhiteSpace(raw) && ColorConverter.ConvertFromString(raw) is Color parsed)
+            {
+                LensColorPreview.Background = new SolidColorBrush(parsed);
+            }
+        }
+        catch
+        {
+            // Keep previous preview brush while user is typing an incomplete hex string
+        }
     }
 
     private void OnFilterSliderChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -66,6 +113,8 @@ public partial class SettingsWindow : Window
             _settings.AnchorOffsetY = oy;
 
         _settings.MonitorScope = MonitorScopeCombo.SelectedIndex == 1 ? MonitorScope.AllMonitors : MonitorScope.PrimaryOnly;
+        _settings.LensBorderColorHex = LensColorBox.Text.Trim();
+        _settings.LensBorderOpacity = LensOpacitySlider.Value;
 
         _settings.OneEuroMinCutoff = MinCutoffSlider.Value;
         _settings.OneEuroBeta = BetaSlider.Value;

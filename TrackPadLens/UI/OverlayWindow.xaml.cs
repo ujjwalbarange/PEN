@@ -27,34 +27,27 @@ public partial class OverlayWindow : Window, IDisposable
         private readonly VisualCollection _visuals;
         private readonly DrawingVisual _visual = new();
 
-        private static readonly Pen LensOutlinePen;
-        private static readonly Pen CornerMarkerPen;
-        private static readonly Pen AnchorLockedPen;
-        private static readonly Brush HoverDotBrush;
+        private Pen _lensOutlinePen = null!;
+        private Pen _cornerMarkerPen = null!;
+        private Pen _anchorLockedPen = null!;
+        private Brush _hoverDotBrush = null!;
+
+        private static readonly Pen EraserRingPen;
+        private static readonly Brush EraserFillBrush;
         private static readonly Brush ScaleBadgeBgBrush;
         private static readonly Brush ScaleBadgeTextBrush;
         private static readonly Typeface BadgeTypeface = new("Segoe UI");
 
         static LensVisualHost()
         {
-            var cyan = Color.FromRgb(0x00, 0xD2, 0xFF);
-            var cyanBrush = new SolidColorBrush(cyan);
-            cyanBrush.Freeze();
+            var eraserStroke = new SolidColorBrush(Color.FromArgb(220, 0xFF, 0x45, 0x3A));
+            eraserStroke.Freeze();
+            EraserRingPen = new Pen(eraserStroke, 1.6);
+            EraserRingPen.Freeze();
 
-            LensOutlinePen = new Pen(cyanBrush, 1.5);
-            LensOutlinePen.Freeze();
-
-            CornerMarkerPen = new Pen(cyanBrush, 2.2);
-            CornerMarkerPen.Freeze();
-
-            var lockedBrush = new SolidColorBrush(Color.FromRgb(0x38, 0xEC, 0xFF));
-            lockedBrush.Freeze();
-            AnchorLockedPen = new Pen(lockedBrush, 1.8) { DashStyle = DashStyles.Dash };
-            AnchorLockedPen.Freeze();
-
-            var hover = new SolidColorBrush(Color.FromArgb(185, 0x00, 0xD2, 0xFF));
-            hover.Freeze();
-            HoverDotBrush = hover;
+            var eraserFill = new SolidColorBrush(Color.FromArgb(45, 0xFF, 0x45, 0x3A));
+            eraserFill.Freeze();
+            EraserFillBrush = eraserFill;
 
             var badgeBg = new SolidColorBrush(Color.FromArgb(205, 15, 23, 42));
             badgeBg.Freeze();
@@ -69,8 +62,35 @@ public partial class OverlayWindow : Window, IDisposable
         {
             IsHitTestVisible = false;
             SnapsToDevicePixels = true;
+            SetAppearance(Color.FromRgb(0x00, 0xD2, 0xFF), 1.0);
             _visuals = new VisualCollection(this);
             _visuals.Add(_visual);
+        }
+
+        public void SetAppearance(Color baseColor, double opacity)
+        {
+            double clampedOpacity = Math.Clamp(opacity, 0.15, 1.0);
+            byte alpha = (byte)Math.Clamp(Math.Round(clampedOpacity * 255.0), 38, 255);
+            byte hoverAlpha = (byte)Math.Clamp(Math.Round(clampedOpacity * 185.0), 40, 220);
+
+            var borderBrush = new SolidColorBrush(Color.FromArgb(alpha, baseColor.R, baseColor.G, baseColor.B));
+            borderBrush.Freeze();
+
+            var outlinePen = new Pen(borderBrush, 1.5);
+            outlinePen.Freeze();
+            _lensOutlinePen = outlinePen;
+
+            var cornerPen = new Pen(borderBrush, 2.2);
+            cornerPen.Freeze();
+            _cornerMarkerPen = cornerPen;
+
+            var lockedPen = new Pen(borderBrush, 1.8) { DashStyle = DashStyles.Dash };
+            lockedPen.Freeze();
+            _anchorLockedPen = lockedPen;
+
+            var hoverBrush = new SolidColorBrush(Color.FromArgb(hoverAlpha, baseColor.R, baseColor.G, baseColor.B));
+            hoverBrush.Freeze();
+            _hoverDotBrush = hoverBrush;
         }
 
         protected override int VisualChildrenCount => _visuals?.Count ?? 0;
@@ -89,7 +109,7 @@ public partial class OverlayWindow : Window, IDisposable
             if (showLens && lens.Width >= 100 && lens.Height >= 40)
             {
                 var rect = new Rect(lens.Left, lens.Top, lens.Width, lens.Height);
-                dc.DrawRectangle(null, isAnchorLocked ? AnchorLockedPen : LensOutlinePen, rect);
+                dc.DrawRectangle(null, isAnchorLocked ? _anchorLockedPen : _lensOutlinePen, rect);
 
                 // Four crisp corner alignment markers
                 const double m = 11.0;
@@ -99,17 +119,17 @@ public partial class OverlayWindow : Window, IDisposable
                 double b = rect.Bottom;
 
                 // Top-left
-                dc.DrawLine(CornerMarkerPen, new Point(l, t + m), new Point(l, t));
-                dc.DrawLine(CornerMarkerPen, new Point(l, t), new Point(l + m, t));
+                dc.DrawLine(_cornerMarkerPen, new Point(l, t + m), new Point(l, t));
+                dc.DrawLine(_cornerMarkerPen, new Point(l, t), new Point(l + m, t));
                 // Top-right
-                dc.DrawLine(CornerMarkerPen, new Point(r - m, t), new Point(r, t));
-                dc.DrawLine(CornerMarkerPen, new Point(r, t), new Point(r, t + m));
+                dc.DrawLine(_cornerMarkerPen, new Point(r - m, t), new Point(r, t));
+                dc.DrawLine(_cornerMarkerPen, new Point(r, t), new Point(r, t + m));
                 // Bottom-left
-                dc.DrawLine(CornerMarkerPen, new Point(l, b - m), new Point(l, b));
-                dc.DrawLine(CornerMarkerPen, new Point(l, b), new Point(l + m, b));
+                dc.DrawLine(_cornerMarkerPen, new Point(l, b - m), new Point(l, b));
+                dc.DrawLine(_cornerMarkerPen, new Point(l, b), new Point(l + m, b));
                 // Bottom-right
-                dc.DrawLine(CornerMarkerPen, new Point(r - m, b), new Point(r, b));
-                dc.DrawLine(CornerMarkerPen, new Point(r, b), new Point(r, b - m));
+                dc.DrawLine(_cornerMarkerPen, new Point(r - m, b), new Point(r, b));
+                dc.DrawLine(_cornerMarkerPen, new Point(r, b), new Point(r, b - m));
 
                 if (!string.IsNullOrEmpty(scaleBadgeText))
                 {
@@ -132,8 +152,15 @@ public partial class OverlayWindow : Window, IDisposable
 
             if (hoverDot.Visible)
             {
-                // Tiny translucent 4px hover dot (radius = 2.0 DIP)
-                dc.DrawEllipse(HoverDotBrush, null, new Point(hoverDot.X, hoverDot.Y), 2.0, 2.0);
+                if (hoverDot.IsEraser)
+                {
+                    dc.DrawEllipse(EraserFillBrush, EraserRingPen, new Point(hoverDot.X, hoverDot.Y), 11.0, 11.0);
+                }
+                else
+                {
+                    // Tiny translucent 4px hover dot (radius = 2.0 DIP)
+                    dc.DrawEllipse(_hoverDotBrush, null, new Point(hoverDot.X, hoverDot.Y), 2.0, 2.0);
+                }
             }
         }
     }
@@ -214,6 +241,12 @@ public partial class OverlayWindow : Window, IDisposable
             _dpiScaleX = source.CompositionTarget.TransformToDevice.M11;
             _dpiScaleY = source.CompositionTarget.TransformToDevice.M22;
         }
+    }
+
+    public void ApplyLensAppearance(Color borderColor, double opacity)
+    {
+        _lensVisual.SetAppearance(borderColor, opacity);
+        RedrawLensChrome();
     }
 
     public void SetLensVisibility(bool visible)
