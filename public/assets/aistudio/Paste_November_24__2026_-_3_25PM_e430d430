@@ -1,0 +1,2039 @@
+TRACKPADLENS — MASTER DEVELOPMENT PROMPT
+
+Intelligent Windows Ink, Whiteboard, Document Annotation & Smart Study Workspace
+
+Act as a principal Windows desktop application architect, senior C#/.NET engineer, Win32/HID systems developer, graphics rendering engineer, document-processing engineer and AI/ML integration specialist.
+
+Your task is to develop TrackPadLens, a complete, production-quality Windows 10/11 desktop application using C# and .NET 8.
+
+This is an evolution of the original TrackPadLens writing-tablet application into a complete intelligent ink and study workspace.
+
+It must combine the capabilities of:
+
+- Apple Notes: natural handwriting, intelligent recognition and beautiful note-taking.
+- Microsoft OneNote: document organization and annotation.
+- Microsoft Whiteboard: infinite canvas and freeform diagrams.
+- Professional PDF annotation tools: document viewing, writing and highlighting.
+- Smart mathematical applications: handwritten equation recognition and solving.
+- Presentation annotation software: transparent desktop drawing.
+- Digital drawing applications: selection, manipulation and vector editing.
+
+However, do not simply copy the interfaces of these applications. Build a unified, lightweight, Windows-native application with its own consistent design language.
+
+This must be a genuinely functional desktop application, not a UI prototype, static mockup or collection of disconnected features.
+
+---
+
+1. PRODUCT VISION
+
+TrackPadLens should provide one unified workspace with four primary environments.
+
+1.1 Standard Mode — Universal Desktop Annotation
+
+A transparent drawing overlay that allows the user to write and draw over any Windows application.
+
+Examples:
+
+- PowerPoint.
+- PDF readers.
+- Web browsers.
+- Online lectures.
+- Images.
+- Educational software.
+- Any other visible desktop application.
+
+Features:
+
+- Transparent full-screen drawing overlay.
+- Pen, highlighter, laser and eraser.
+- Multiple colors and thicknesses.
+- Lasso selection.
+- Move, resize, rotate and delete strokes.
+- Undo and redo.
+- Smart handwriting conversion.
+- Equation recognition.
+- Diagram annotation.
+- Screenshot capture.
+- Save and restore annotation sessions.
+
+The original application underneath must remain interactive.
+
+Standard Mode must never unnecessarily intercept clicks or keyboard input intended for other applications.
+
+1.2 Trackpad Lens Mode — Touchpad as a Writing Tablet
+
+Preserve the original TrackPadLens functionality.
+
+The laptop's Precision Touchpad should function as an absolute-positioned writing tablet while an external mouse independently controls a floating transparent writing frame.
+
+Features:
+
+- Raw HID device discovery.
+- Touchpad coordinate acquisition.
+- External mouse separation.
+- Absolute coordinate mapping.
+- Aspect-ratio preservation.
+- Floating cyan Lens frame.
+- Scroll-wheel resizing.
+- Anchor lock.
+- 1-Euro Filter.
+- Palm rejection.
+- Multi-finger rejection.
+- Hover indicator.
+- Smooth ink rendering.
+
+Preserve the original hardware compatibility requirements.
+
+Important Windows limitation:
+
+WH_MOUSE_LL does not identify the physical source device, and LLMHF_INJECTED does not identify a touchpad. Do not implement unreliable cursor suppression.
+
+Use documented Windows APIs and verify actual touchpad capabilities. If a signed filter driver is required for reliable device-specific cursor isolation, treat it as a separate optional component. Never silently disable hardware devices or block all mouse input.
+
+Provide clear hardware diagnostics and compatible operating modes.
+
+1.3 Whiteboard Mode — Intelligent Digital Notebook
+
+A full-screen writing workspace inspired by the natural interaction of Apple Notes.
+
+Features:
+
+- Infinite canvas.
+- Optional traditional page-based notebook.
+- Blank, ruled, dotted and grid backgrounds.
+- Smooth zoom and pan.
+- Handwriting.
+- Freeform drawing.
+- Text objects.
+- Mathematical equations.
+- Images.
+- Diagrams.
+- Shapes.
+- Arrows and connectors.
+- Multiple pages.
+- Notebooks and folders.
+- Autosave.
+- Undo and redo.
+- Export to PNG and PDF.
+
+Support both:
+
+- Infinite canvas mode.
+- Traditional notebook/page mode.
+
+The user must be able to switch between them.
+
+1.4 Smart Study Workspace — Document-Centric Working Environment
+
+Allow users to open actual study material and work directly on it instead of always starting with a blank whiteboard.
+
+Supported content:
+
+- PDF.
+- DOCX.
+- PNG.
+- JPG/JPEG.
+- WebP.
+- SVG.
+- TXT.
+- Clipboard images.
+- Screenshots.
+
+Provide a recent-files section and document-opening interface.
+
+The user should be able to open a document, annotate it, extract its contents, paste diagrams, create additional notes and apply intelligent transformations.
+
+A document must not be treated as merely a background image.
+
+Maintain a document model with pages, objects, annotations and metadata.
+
+---
+
+2. TECHNOLOGY STACK AND ARCHITECTURE
+
+Use a performance-first native Windows architecture.
+
+2.1 Required technology
+
+Layer| Technology
+Language| C#
+Runtime| .NET 8
+Desktop framework| WPF
+Platform| Windows 10/11 x64
+Native integration| Win32 P/Invoke
+HID input| Windows Raw Input + HID API
+Ink rendering| Direct2D or optimized DrawingVisual
+System tray| WinForms NotifyIcon
+PDF rendering| PDFium with a suitable maintained .NET binding
+DOCX parsing| Open XML SDK
+Image processing| Windows imaging APIs / lightweight native libraries
+OCR| Windows OCR or suitable local OCR engine
+Handwriting| Windows Ink Analysis where supported
+Mathematical recognition| Specialized offline-capable math OCR model
+ML inference| ONNX Runtime when needed
+Mathematical computation| Local symbolic mathematics engine
+Equation rendering| LaTeX-compatible renderer
+Configuration| System.Text.Json
+Document metadata| Lightweight JSON-based format
+
+Do not automatically introduce every dependency listed above. Select the smallest practical implementation that meets the requirements.
+
+Verify library maintenance, licensing, redistribution permissions and Windows compatibility before integrating dependencies.
+
+2.2 Important DOCX rendering requirement
+
+Open XML SDK reads and manipulates DOCX structure but is not a complete Word layout renderer.
+
+Do not pretend that parsing DOCX XML is equivalent to displaying a faithfully formatted document.
+
+Implement a practical document-viewing strategy:
+
+1. Support DOCX text, paragraphs, headings, tables, images and common formatting.
+2. Provide faithful pagination through an appropriate rendering/conversion engine.
+3. Prefer optional integration with an installed Microsoft Office or LibreOffice installation for high-fidelity conversion to PDF.
+4. If those applications are unavailable, provide a clearly identified native fallback renderer for supported DOCX content.
+5. Preserve the original DOCX file.
+6. Do not require the user to install a heavyweight application silently.
+
+Do not bundle a browser engine or full office suite simply to display documents.
+
+2.3 Performance principles
+
+Prioritize:
+
+- Low idle RAM consumption.
+- Low CPU usage.
+- Fast startup.
+- Smooth rendering.
+- Minimal dependencies.
+- Event-driven processing.
+- No unnecessary background services.
+- No continuous polling.
+- No cloud connection required for basic operations.
+- No unnecessary allocations during pointer movement.
+- Lazy loading of documents and images.
+- Incremental autosave.
+- Bounded undo history.
+- Efficient caching.
+
+Separate the input, processing, rendering, document and intelligence layers.
+
+AI processing must never block writing or drawing.
+
+---
+
+3. UNIFIED OBJECT-BASED INK ENGINE
+
+This is one of the most important architectural requirements.
+
+Do not store the entire whiteboard or annotation session as a single bitmap.
+
+Implement a shared object-based document model.
+
+Every item must be independently manageable.
+
+3.1 Supported object types
+
+Implement a common object interface with appropriate specialized types:
+
+- InkStrokeObject.
+- HandwritingGroupObject.
+- TextObject.
+- EquationObject.
+- ImageObject.
+- VectorShapeObject.
+- DiagramObject.
+- ConnectorObject.
+- AnnotationObject.
+- PdfPageObject.
+- DocumentReferenceObject.
+
+Every object should support appropriate properties:
+
+- Unique ID.
+- Position.
+- Width and height.
+- Rotation.
+- Z-order.
+- Visibility.
+- Selection state.
+- Group membership.
+- Content.
+- Styling.
+- Bounding box.
+- Transformation history.
+
+Do not force every object to implement irrelevant functionality. Use appropriate specialized interfaces.
+
+3.2 Object manipulation
+
+Support:
+
+- Single selection.
+- Multiple selection.
+- Rectangular selection.
+- Freeform lasso selection.
+- Move.
+- Resize.
+- Rotate.
+- Duplicate.
+- Copy.
+- Paste.
+- Delete.
+- Group.
+- Ungroup.
+- Align.
+- Distribute.
+- Lock.
+- Unlock.
+- Bring forward.
+- Send backward.
+
+Maintain selection handles and contextual toolbars.
+
+Support Shift or Ctrl modifiers for adding/removing objects from selection.
+
+Provide keyboard-accessible object manipulation.
+
+3.3 Spatial indexing
+
+For large whiteboards, implement spatial indexing so selecting objects does not require scanning every stroke.
+
+Use an appropriate spatial data structure, such as a quadtree, R-tree or spatial hash.
+
+Support viewport-based rendering and object culling.
+
+Do not redraw the entire document unnecessarily when one object changes.
+
+3.4 Command-based history
+
+Implement a proper command-based undo/redo system.
+
+Operations should include:
+
+- Add object.
+- Remove object.
+- Move object.
+- Resize object.
+- Change styling.
+- Group objects.
+- Ungroup objects.
+- Convert handwriting.
+- Transform diagram.
+- Replace image.
+- Modify equation.
+
+Avoid storing complete copies of the entire document after every action.
+
+Support bounded history and memory-efficient undo.
+
+---
+
+4. DOCUMENT WORKSPACE
+
+4.1 Home screen
+
+Create a professional home screen with:
+
+- New Whiteboard.
+- Open Document.
+- Import Image.
+- Recent Projects.
+- Recent Documents.
+- Notebooks.
+- Search.
+- Settings.
+
+Support drag-and-drop document opening.
+
+Remember the user's recent workspace and restore it safely.
+
+4.2 PDF workspace
+
+Use PDFium for PDF rendering.
+
+Support:
+
+- Open local PDF files.
+- Multiple pages.
+- Page navigation.
+- Page thumbnails.
+- Search where text extraction is available.
+- Zoom.
+- Fit width.
+- Fit page.
+- Continuous scrolling.
+- Text selection where available.
+- Highlighting.
+- Underlining.
+- Handwritten annotations.
+- Drawing.
+- Images.
+- Sticky notes.
+- Page rotation.
+- Page bookmarks.
+
+Provide a floating annotation toolbar.
+
+Allow annotations to remain separate from the original PDF.
+
+Support saving annotations in a project format and exporting an annotated PDF.
+
+Implement two export options:
+
+Flattened PDF
+
+- Permanently composite visible annotations into exported pages.
+
+Editable TrackPadLens document
+
+- Preserve the original PDF.
+- Store annotation objects separately.
+- Allow later editing and removal.
+
+Never overwrite the original PDF without explicit user confirmation.
+
+4.3 DOCX workspace
+
+Support opening DOCX files.
+
+Display:
+
+- Paragraphs.
+- Headings.
+- Tables.
+- Images.
+- Lists.
+- Common text formatting.
+
+Support annotations, highlighting, handwritten notes and pasted objects.
+
+Preserve the original document.
+
+Allow exporting annotations separately or generating an annotated PDF.
+
+Do not claim complete Word editing functionality unless implemented and tested.
+
+4.4 Image workspace
+
+Support:
+
+- PNG.
+- JPG/JPEG.
+- WebP.
+- SVG.
+
+Allow:
+
+- Zoom.
+- Pan.
+- Crop.
+- Resize.
+- Rotate.
+- Duplicate.
+- Annotate.
+- Draw over images.
+- Extract text.
+- Identify diagrams.
+- Reconstruct vector objects.
+
+Keep original image data intact.
+
+Support high-resolution images without loading unnecessarily large decoded copies into memory.
+
+---
+
+5. CLIPBOARD AND SCREENSHOT INTELLIGENCE
+
+This is a major differentiating feature.
+
+The user should be able to copy anything visible on Windows and paste it directly into TrackPadLens.
+
+5.1 Universal clipboard paste
+
+Implement Windows Clipboard integration.
+
+Support:
+
+- Bitmap images.
+- PNG clipboard data.
+- DIB/DIBV5.
+- Text.
+- Unicode text.
+- Supported vector clipboard formats.
+
+When the user presses Ctrl + V inside the application:
+
+- If the clipboard contains an image, create an ImageObject.
+- If it contains text, create a TextObject or paste into an active text editor.
+- If it contains supported vector data, preserve it as vector content.
+- If it contains unsupported data, display a useful explanation.
+
+Use the clipboard data without modifying the original clipboard unnecessarily.
+
+Preserve transparency and image quality.
+
+The pasted object should appear near the viewport center or cursor position according to the active setting.
+
+Automatically select the pasted object.
+
+5.2 Screenshot capture
+
+Provide a built-in region screenshot tool.
+
+Default shortcut:
+
+Alt + Shift + S
+
+Workflow:
+
+1. Activate capture mode.
+2. Display a screen-selection rectangle.
+3. Let the user select any region.
+4. Capture the selected pixels.
+5. Return to the active workspace.
+6. Insert the screenshot as an ImageObject.
+7. Allow immediate movement and resizing.
+
+Support:
+
+- Entire screen.
+- Selected region.
+- Active window.
+- Multi-monitor selection.
+
+Use Windows Graphics Capture or an appropriate supported Windows capture API.
+
+Also support screenshots captured externally using Windows Snipping Tool and pasted with Ctrl + V.
+
+Do not require a cloud service.
+
+Handle protected content and capture restrictions gracefully.
+
+5.3 Image manipulation
+
+Every pasted image should support:
+
+- Move.
+- Resize.
+- Rotate.
+- Crop.
+- Duplicate.
+- Delete.
+- Lock.
+- Flip horizontally.
+- Flip vertically.
+- Preserve aspect ratio.
+- Bring forward.
+- Send backward.
+
+Provide resize handles and a contextual toolbar.
+
+Do not convert an image into an editable diagram automatically.
+
+Image manipulation and diagram reconstruction must remain separate operations.
+
+---
+
+6. SMART IMAGE AND DIAGRAM RECONSTRUCTION ENGINE
+
+Implement a Smart Diagram subsystem.
+
+The purpose is to convert screenshots, diagrams and reference images into clean, editable content.
+
+6.1 Magic actions
+
+When an image is selected, display:
+
+- Extract Text.
+- Recognize Equation.
+- Detect Shapes.
+- Recreate Diagram.
+- Clean Image.
+- Crop.
+- Remove Background, where supported.
+- Explain Diagram.
+- Convert to Editable Objects.
+
+6.2 Diagram reconstruction pipeline
+
+Implement a staged pipeline:
+
+1. Analyze image dimensions and quality.
+2. Detect text regions.
+3. Detect lines and connectors.
+4. Detect geometrical shapes.
+5. Detect arrows.
+6. Detect symbols using suitable specialized recognition.
+7. Identify spatial relationships.
+8. Build an intermediate diagram representation.
+9. Generate vector objects.
+10. Display the reconstructed diagram.
+11. Allow manual correction.
+
+6.3 Subject-aware recognition
+
+Provide extensible recognition profiles for:
+
+Electrical engineering
+
+- Resistors.
+- Capacitors.
+- Inductors.
+- Diodes.
+- Transistors.
+- Logic gates.
+- Circuit connections.
+- Input/output labels.
+
+Physics
+
+- Force vectors.
+- Angles.
+- Geometrical diagrams.
+- Arrows.
+- Labels.
+- Graphs.
+
+Mathematics
+
+- Graphs.
+- Axes.
+- Geometric figures.
+- Mathematical symbols.
+- Equation layouts.
+
+General diagrams
+
+- Boxes.
+- Connectors.
+- Flowcharts.
+- Arrows.
+- Text labels.
+- Shapes.
+
+Do not assume generic computer vision can understand every engineering symbol.
+
+Use specialized recognition where necessary.
+
+6.4 Two reconstruction outputs
+
+Always offer two choices:
+
+A. Clean Image
+
+- Produce a cleaned image.
+- Preserve its appearance.
+- Keep it as a single image object.
+
+B. Editable Vector Reconstruction
+
+- Reconstruct detected components as independent vector objects.
+- Make text editable.
+- Make connectors editable.
+- Allow individual symbols to be moved and resized.
+- Preserve relative positioning.
+
+Keep the original image unchanged.
+
+Show a side-by-side comparison or an overlay preview before accepting reconstruction.
+
+Provide confidence indicators.
+
+If recognition is uncertain, ask the user to correct or confirm ambiguous components.
+
+Never invent missing diagram components.
+
+---
+
+7. HANDWRITING RECOGNITION AND SMART INK
+
+Create a dedicated SmartInkEngine.
+
+7.1 Recognition
+
+Support:
+
+- Handwritten English text.
+- Common mathematical symbols.
+- Numbers.
+- Paragraphs.
+- Headings.
+- Lists.
+- Text groups.
+
+Investigate Windows Ink Analysis and handwriting recognition APIs.
+
+Verify compatibility with a .NET 8 WPF desktop application before implementation.
+
+Provide an abstraction layer so the recognition provider can be replaced without changing the ink engine.
+
+7.2 Text transformation
+
+For selected handwriting, provide:
+
+Convert to Text
+
+- Recognize handwriting.
+- Preserve word order.
+- Preserve paragraph structure where possible.
+- Create editable text objects.
+- Allow font selection.
+- Allow font size and color changes.
+
+Clean Handwriting
+
+- Improve spacing.
+- Improve alignment.
+- Normalize irregular stroke spacing.
+- Preserve original handwritten character style as much as possible.
+
+Typeset
+
+- Convert recognized text into professionally formatted text.
+- Preserve headings, lists and paragraphs.
+
+Do not claim that simple font replacement recreates the user's handwriting style.
+
+For generative handwriting reconstruction, use a suitable optional model and preserve the original strokes.
+
+7.3 Recognition interaction
+
+The user should be able to:
+
+- Select one word.
+- Select one line.
+- Select an entire paragraph.
+- Select multiple handwritten groups.
+- Convert only selected content.
+- Keep original handwriting.
+- Replace original handwriting.
+- Undo conversion.
+
+Display recognized text for correction before committing when confidence is low.
+
+Never run full-document OCR on every pointer movement.
+
+Perform recognition asynchronously on completed strokes or selected content.
+
+---
+
+8. MATHEMATICAL INTELLIGENCE ENGINE
+
+Build a separate mathematical subsystem.
+
+It must not be treated as ordinary OCR.
+
+8.1 Recognition pipeline
+
+Implement:
+
+1. Handwritten mathematical ink collection.
+2. Stroke grouping.
+3. Mathematical symbol recognition.
+4. Two-dimensional expression layout analysis.
+5. Expression conversion to structured representation or LaTeX.
+6. Syntax validation.
+7. Mathematical computation.
+8. Result rendering.
+
+Support common operations:
+
+- Addition.
+- Subtraction.
+- Multiplication.
+- Division.
+- Fractions.
+- Powers.
+- Roots.
+- Algebra.
+- Factorization.
+- Linear equations.
+- Quadratic equations.
+- Differentiation.
+- Integration.
+- Limits.
+- Basic trigonometry.
+- Matrices.
+- Basic calculus.
+
+8.2 Solving
+
+When an equation is selected, provide:
+
+- Recognize.
+- Simplify.
+- Solve.
+- Factorize.
+- Differentiate.
+- Integrate.
+- Explain.
+- Show Steps.
+
+Example:
+
+Input:
+
+x² - 5x + 6 = 0
+
+Output:
+
+(x - 2)(x - 3) = 0
+
+x = 2 or x = 3
+
+Render equations using a proper mathematical typesetting engine.
+
+Do not insert unverified solutions.
+
+8.3 Offline and online processing
+
+Prefer local mathematical computation.
+
+Use a local symbolic mathematics engine.
+
+Investigate a suitable specialized mathematical handwriting recognition model, including ONNX-compatible options.
+
+If recognition requires an optional AI provider, make that integration configurable.
+
+The application must remain usable without an internet connection.
+
+8.4 Confidence and correction
+
+If recognition is ambiguous:
+
+- Display the interpreted equation.
+- Highlight uncertain symbols.
+- Let the user edit the expression.
+- Allow reprocessing.
+- Do not silently solve an incorrectly interpreted equation.
+
+Keep original handwriting intact.
+
+---
+
+9. MAGIC MENU — CONTEXTUAL INTELLIGENT ACTIONS
+
+Create a unified contextual Magic Menu.
+
+It should appear when selecting one or more objects.
+
+Actions must depend on the selected content.
+
+For handwritten text
+
+- Clean.
+- Convert to Text.
+- Rewrite.
+- Typeset.
+- Summarize.
+- Explain.
+- Translate.
+
+For equations
+
+- Recognize.
+- Solve.
+- Simplify.
+- Factorize.
+- Differentiate.
+- Integrate.
+- Explain.
+
+For images
+
+- Extract Text.
+- Recognize Equations.
+- Recreate Diagram.
+- Clean Image.
+- Crop.
+- Convert to Editable Objects.
+
+For diagrams
+
+- Straighten.
+- Align.
+- Organize.
+- Recreate.
+- Extract Labels.
+- Explain.
+- Convert to Vector Objects.
+
+For multiple objects
+
+- Group.
+- Align.
+- Distribute.
+- Resize.
+- Duplicate.
+- Clean Layout.
+- Export Selection.
+
+Magic actions must be non-destructive by default.
+
+Preserve original content and support undo.
+
+Provide optional AI-powered explanations and rewriting through a configurable provider.
+
+Do not make cloud AI mandatory for basic application functionality.
+
+---
+
+10. WHITEBOARD MODE — APPLE NOTES-INSPIRED EXPERIENCE
+
+Design a premium, clean and distraction-free interface.
+
+The design should be inspired by Apple Notes' simplicity, but remain a native Windows application.
+
+10.1 Canvas
+
+Support:
+
+- Infinite canvas.
+- Page-based notebooks.
+- Smooth zoom.
+- Pan.
+- Multiple pages.
+- Grid.
+- Dotted.
+- Ruled.
+- Blank paper.
+- Custom background.
+
+10.2 Writing tools
+
+Provide:
+
+- Ballpoint pen.
+- Pencil.
+- Marker.
+- Highlighter.
+- Eraser.
+- Laser pointer.
+- Shape tool.
+- Text tool.
+- Image tool.
+- Equation tool.
+- Selection tool.
+
+Pen settings:
+
+- Color.
+- Thickness.
+- Opacity.
+- Pressure sensitivity where supported.
+- Stroke smoothing.
+- Optional stabilization.
+
+10.3 Contextual controls
+
+When selecting an object, show a compact floating toolbar.
+
+Do not permanently occupy large portions of the canvas.
+
+Support compact and expanded toolbar layouts.
+
+10.4 Page and notebook management
+
+Implement:
+
+- New notebook.
+- New page.
+- Rename.
+- Duplicate.
+- Delete.
+- Reorder.
+- Search.
+- Autosave.
+- Export.
+- Recent workspaces.
+
+Persist document state safely.
+
+---
+
+11. UNIFIED STUDY WORKSPACE
+
+Provide a unified workspace that can contain:
+
+- PDF documents.
+- Whiteboards.
+- Imported images.
+- Handwritten notes.
+- Mathematical solutions.
+- Diagram objects.
+
+Support three layouts:
+
+Document Focus
+
+- Main document occupies the workspace.
+- Annotation toolbar remains available.
+
+Split Workspace
+
+- Reference document on one side.
+- Writing canvas on the other.
+- Independent zoom and scrolling.
+- Optional linked page references.
+
+Free Workspace
+
+- Multiple documents and objects can be arranged freely.
+- Move and resize panels.
+- Send selected content to Whiteboard.
+- Copy diagrams between documents.
+
+The user must be able to move between document and whiteboard environments without losing state.
+
+11.1 PDF to Whiteboard
+
+Allow the user to select:
+
+- A full page.
+- A region.
+- An image.
+- A diagram.
+- Text.
+- An equation.
+
+Provide:
+
+Magic → Send to Whiteboard
+
+Create an independent copy of the selected content.
+
+Preserve:
+
+- Source document reference.
+- Page number.
+- Original dimensions.
+- Crop boundaries, where applicable.
+
+Keep the original PDF unchanged.
+
+11.2 Whiteboard to PDF
+
+Allow selected whiteboard content to be exported or inserted into a PDF annotation session.
+
+Preserve vector information in the TrackPadLens project format.
+
+---
+
+12. STANDARD MODE — DESKTOP ANNOTATION
+
+Implement a transparent overlay.
+
+Features:
+
+- Full-screen overlay.
+- Multi-monitor support.
+- Click-through background.
+- Interactive toolbar region.
+- Pen.
+- Highlighter.
+- Laser.
+- Eraser.
+- Lasso.
+- Selection.
+- Undo.
+- Redo.
+- Clear.
+- Screenshot.
+- Save session.
+
+Support both:
+
+- Temporary annotations.
+- Persistent annotation sessions.
+
+Allow saving annotations independently from the underlying application.
+
+Do not modify the underlying PDF, browser or PowerPoint document.
+
+Overlay requirements
+
+Use appropriate Win32 window styles:
+
+- WS_EX_LAYERED.
+- WS_EX_TRANSPARENT.
+- WS_EX_TOOLWINDOW.
+
+Test actual WPF hit testing and click-through behavior.
+
+Ensure the toolbar alone can become interactive without disabling click-through for the rest of the screen.
+
+Support screen capture by OBS and conferencing tools where Windows permits.
+
+Do not claim guaranteed capture visibility without testing the actual window composition behavior.
+
+---
+
+13. ORIGINAL FLOATING TRACKPAD LENS
+
+Preserve the original trackpad functionality as a first-class environment.
+
+13.1 Hardware input
+
+Use:
+
+- RegisterRawInputDevices.
+- GetRawInputData.
+- GetRawInputDeviceList.
+- GetRawInputDeviceInfo.
+- HidD_GetPreparsedData.
+- HidD_FreePreparsedData.
+- HidP_GetCaps.
+- HidP_GetValueCaps.
+- HidP_GetButtonCaps.
+
+Detect:
+
+- Built-in touchpad.
+- External mouse.
+- Bluetooth mouse.
+- Multiple pointing devices.
+
+Inspect actual HID descriptors.
+
+Do not assume every Precision Touchpad exposes absolute contact coordinates.
+
+13.2 Absolute coordinate mapping
+
+Normalize:
+
+u = (rawX - logicalMinX) / (logicalMaxX - logicalMinX)
+
+v = (rawY - logicalMinY) / (logicalMaxY - logicalMinY)
+
+Map:
+
+screenX = boxLeft + u * boxWidth
+
+screenY = boxTop + v * boxHeight
+
+Support:
+
+- Calibration.
+- X/Y inversion.
+- DPI conversion.
+- Multi-monitor coordinates.
+- Physical aspect ratio.
+- Contact IDs.
+- Contact state.
+- Palm rejection.
+- Multi-finger rejection.
+
+13.3 Floating Lens
+
+Visual requirements:
+
+- Transparent interior.
+- Cyan #00D2FF outline.
+- 1.5px border.
+- Four corner markers.
+- Centered or top-left anchoring.
+- Mouse-following.
+- Scroll-wheel resizing.
+- Aspect-ratio lock.
+- 100px minimum width.
+- 90% screen-width maximum.
+- 1.0x scale badge.
+- Anchor lock.
+
+13.4 Smoothing
+
+Implement a proper 1-Euro Filter.
+
+Support:
+
+- Configurable minimum cutoff.
+- Beta.
+- Derivative cutoff.
+- Timestamped samples.
+
+Render smooth curves through an efficient retained graphics pipeline.
+
+13.5 Palm rejection
+
+Use:
+
+- Contact area.
+- Contact IDs.
+- Contact count.
+- Tip state.
+- Device capability information.
+
+Do not assume every touchpad reports all these properties.
+
+Never fabricate hardware input.
+
+---
+
+14. CUSTOMIZABLE KEYBOARD SHORTCUTS
+
+Create a dedicated ShortcutManager.
+
+Every major operation must have a configurable shortcut.
+
+Suggested defaults:
+
+Operation| Default
+Standard Mode| Alt + D
+Trackpad Lens| Alt + T
+Whiteboard Mode| Alt + W
+Smart Selection| V
+Pen| P
+Eraser| E
+Highlighter| H
+Lasso| L
+Magic Menu| Ctrl + Space
+Convert to Text| Ctrl + Shift + T
+Solve Equation| Ctrl + Enter
+Undo| Ctrl + Z
+Redo| Ctrl + Y
+Copy| Ctrl + C
+Paste| Ctrl + V
+Duplicate| Ctrl + D
+Group| Ctrl + G
+Ungroup| Ctrl + Shift + G
+Zoom In| Ctrl + Plus
+Zoom Out| Ctrl + Minus
+Fit Canvas| Ctrl + 0
+Save| Ctrl + S
+New Page| Ctrl + N
+Search| Ctrl + F
+Screenshot Capture| Alt + Shift + S
+Toggle Toolbar| Tab
+
+Implement:
+
+- Shortcut customization.
+- Conflict detection.
+- Modifier support.
+- Per-mode shortcuts.
+- Context-sensitive bindings.
+- Import/export profiles.
+- Restore defaults.
+
+Do not globally register ordinary editing shortcuts when they should only apply inside TrackPadLens.
+
+Avoid stealing shortcuts from PowerPoint and other applications.
+
+Use RegisterHotKey for genuine global commands where appropriate.
+
+---
+
+15. INPUT DEVICE SUPPORT
+
+Support the following input sources through a common input abstraction:
+
+1. Precision Touchpad.
+2. External mouse.
+3. Windows touchscreen.
+4. Windows digital pen/stylus.
+5. External drawing tablet where supported.
+
+Normalize their input into a shared event model.
+
+Support:
+
+- Position.
+- Pressure.
+- Tilt when available.
+- Contact state.
+- Device identity.
+- Timestamp.
+- Pointer type.
+
+Do not invent pressure or tilt values when hardware does not provide them.
+
+Allow device-specific configuration.
+
+---
+
+16. SCREENSHOT AND EXPORT SYSTEM
+
+Implement:
+
+- PNG export.
+- JPEG export.
+- PDF export.
+- Editable project save.
+- Selected object export.
+- Current page export.
+- Full workspace export.
+
+For PDF annotations, support both flattened and editable project output.
+
+Default screenshot location:
+
+Pictures/TrackPadLens/
+
+Use timestamped filenames.
+
+Avoid duplicate overlay compositing.
+
+Support multi-monitor capture.
+
+---
+
+17. USER INTERFACE AND DESIGN SYSTEM
+
+Create a consistent visual language.
+
+Design direction
+
+- Apple Notes-inspired minimalism.
+- Native Windows desktop behavior.
+- Clean typography.
+- Subtle borders.
+- Soft rounded corners.
+- Compact floating toolbars.
+- Smooth but restrained animations.
+- Light and dark themes.
+- Excellent keyboard accessibility.
+
+Main navigation
+
+Use a compact sidebar:
+
+- Home.
+- Recent.
+- Notebooks.
+- Whiteboards.
+- Documents.
+- Images.
+- Settings.
+
+Workspace toolbar
+
+Provide:
+
+- Selection.
+- Pen.
+- Pencil.
+- Highlighter.
+- Eraser.
+- Shapes.
+- Text.
+- Image.
+- Equation.
+- Magic.
+- Undo.
+- Redo.
+
+Do not make the interface unnecessarily crowded.
+
+Use contextual toolbars to reveal advanced options.
+
+Provide configurable toolbar placement.
+
+---
+
+18. SETTINGS AND PERSONALIZATION
+
+Create a complete Settings window.
+
+Categories:
+
+Appearance
+
+- Light/dark/system theme.
+- Accent color.
+- Toolbar appearance.
+- Animation preferences.
+
+Input
+
+- Touchpad calibration.
+- Device selection.
+- Palm rejection.
+- Mouse behavior.
+- Stylus settings.
+- Smoothing.
+
+Ink
+
+- Default pen.
+- Default colors.
+- Thickness.
+- Highlighter opacity.
+- Recognition preferences.
+
+Documents
+
+- Default save location.
+- PDF behavior.
+- DOCX behavior.
+- Autosave interval.
+- Recent file history.
+
+Intelligence
+
+- Offline recognition.
+- OCR provider.
+- Mathematical recognition model.
+- Optional AI provider.
+- Processing limits.
+- Privacy settings.
+
+Shortcuts
+
+- Customize every supported action.
+- Detect conflicts.
+- Import/export profiles.
+
+Performance
+
+- Rendering settings.
+- Memory limits.
+- Undo history limits.
+- Cache limits.
+- Hardware acceleration.
+
+Persist settings using System.Text.Json.
+
+Never store API keys in plain-text project files or source code.
+
+---
+
+19. PERFORMANCE AND RESOURCE MANAGEMENT
+
+Performance is a first-class requirement.
+
+The application should feel responsive even on ordinary student laptops.
+
+Rendering
+
+- Use retained drawing data.
+- Avoid full-surface redraws.
+- Use viewport culling.
+- Use spatial indexing.
+- Use efficient invalidation.
+- Avoid excessive Dispatcher calls.
+- Reuse stroke buffers.
+- Keep pointer processing separate from expensive recognition.
+
+Recognition
+
+- Run asynchronously.
+- Process only changed regions.
+- Cache results.
+- Support cancellation.
+- Avoid full-document OCR unnecessarily.
+- Load ML models only when needed.
+
+Memory
+
+- Bound undo history.
+- Lazy-load pages.
+- Release unused image buffers.
+- Cache thumbnails.
+- Avoid duplicate image decoding.
+- Dispose native resources.
+- Monitor memory pressure.
+
+CPU
+
+- No busy loops.
+- No continuous unnecessary polling.
+- No background AI processing while idle.
+- Use event-driven processing.
+- Avoid unnecessary timers.
+
+Target smooth 60 FPS or better when the hardware permits.
+
+Measure actual performance instead of claiming arbitrary performance numbers.
+
+---
+
+20. DATA STORAGE AND AUTOSAVE
+
+Implement a native editable project format.
+
+Suggested extension:
+
+.tlproject
+
+Use a documented, versioned format.
+
+Store:
+
+- Document metadata.
+- Pages.
+- Vector strokes.
+- Text objects.
+- Equations.
+- Images.
+- Diagram objects.
+- Object transformations.
+- Group relationships.
+- References to source documents.
+- Undo-relevant state where appropriate.
+- Application settings associated with the project.
+
+Use efficient JSON metadata and binary storage for large assets.
+
+Support:
+
+- Incremental autosave.
+- Recovery after unexpected shutdown.
+- Backup before destructive operations.
+- Version migration.
+- Missing asset recovery.
+
+Do not embed huge base64 image strings in frequently rewritten JSON files.
+
+Use a safe asset storage strategy.
+
+---
+
+21. PROJECT STRUCTURE
+
+Use a modular and maintainable project structure.
+
+Suggested:
+
+TrackPadLens/
+│
+├── TrackPadLens.sln
+├── TrackPadLens.csproj
+├── App.xaml
+├── App.xaml.cs
+├── MainWindow.xaml
+├── MainWindow.xaml.cs
+│
+├── Core/
+│   ├── ApplicationManager.cs
+│   ├── WorkspaceManager.cs
+│   ├── ModeManager.cs
+│   ├── EventBus.cs
+│   └── ResourceManager.cs
+│
+├── Native/
+│   ├── Win32Interop.cs
+│   ├── RawInputManager.cs
+│   ├── HidTouchpadReader.cs
+│   ├── MouseHookManager.cs
+│   ├── HotkeyManager.cs
+│   ├── WindowStyles.cs
+│   └── DeviceEnumerator.cs
+│
+├── Hardware/
+│   ├── HardwareInputManager.cs
+│   ├── TouchpadDevice.cs
+│   ├── MouseDevice.cs
+│   ├── StylusDevice.cs
+│   └── DeviceCapabilities.cs
+│
+├── Input/
+│   ├── InputEvent.cs
+│   ├── InputNormalizer.cs
+│   └── InputRouter.cs
+│
+├── Ink/
+│   ├── InkEngine.cs
+│   ├── Stroke.cs
+│   ├── StrokePoint.cs
+│   ├── StrokeProcessor.cs
+│   ├── OneEuroFilter.cs
+│   ├── PalmRejection.cs
+│   └── CoordinateMapper.cs
+│
+├── Rendering/
+│   ├── InkRenderer.cs
+│   ├── DrawingSurface.cs
+│   ├── Direct2DRenderer.cs
+│   └── LaserRenderer.cs
+│
+├── Objects/
+│   ├── DocumentObject.cs
+│   ├── InkStrokeObject.cs
+│   ├── TextObject.cs
+│   ├── ImageObject.cs
+│   ├── EquationObject.cs
+│   ├── DiagramObject.cs
+│   ├── ShapeObject.cs
+│   ├── ConnectorObject.cs
+│   └── ObjectManager.cs
+│
+├── Selection/
+│   ├── SelectionManager.cs
+│   ├── LassoSelector.cs
+│   ├── SpatialIndex.cs
+│   └── TransformManager.cs
+│
+├── Documents/
+│   ├── DocumentManager.cs
+│   ├── PdfEngine.cs
+│   ├── DocxEngine.cs
+│   ├── ImageEngine.cs
+│   ├── PageManager.cs
+│   └── DocumentExporter.cs
+│
+├── Clipboard/
+│   ├── ClipboardManager.cs
+│   ├── ClipboardImageHandler.cs
+│   └── ScreenshotService.cs
+│
+├── Intelligence/
+│   ├── SmartInkEngine.cs
+│   ├── TextRecognitionEngine.cs
+│   ├── MathRecognitionEngine.cs
+│   ├── MathSolverEngine.cs
+│   ├── DiagramRecognitionEngine.cs
+│   ├── OCRService.cs
+│   └── MagicActionManager.cs
+│
+├── Commands/
+│   ├── ICommand.cs
+│   ├── CommandManager.cs
+│   ├── UndoManager.cs
+│   └── ShortcutManager.cs
+│
+├── Storage/
+│   ├── ProjectSerializer.cs
+│   ├── AutosaveService.cs
+│   ├── RecoveryService.cs
+│   └── AssetStore.cs
+│
+├── Services/
+│   ├── TrayService.cs
+│   ├── StartupService.cs
+│   ├── ConfigurationService.cs
+│   └── DiagnosticsService.cs
+│
+├── UI/
+│   ├── Home/
+│   ├── Whiteboard/
+│   ├── Documents/
+│   ├── Overlay/
+│   ├── Toolbar/
+│   ├── Settings/
+│   ├── Selection/
+│   └── Calibration/
+│
+├── Resources/
+│   ├── Icons/
+│   └── Themes/
+│
+├── Tests/
+│   ├── CoordinateMapperTests.cs
+│   ├── InkEngineTests.cs
+│   ├── ObjectManagerTests.cs
+│   ├── SelectionTests.cs
+│   ├── UndoRedoTests.cs
+│   ├── DocumentTests.cs
+│   ├── ClipboardTests.cs
+│   └── RecognitionTests.cs
+│
+├── Scripts/
+│   ├── Build-Debug.ps1
+│   ├── Build-Release.ps1
+│   └── Publish.ps1
+│
+└── README.md
+
+You may reorganize this structure when a technically better approach is justified.
+
+Do not create unnecessary abstractions or empty projects just to follow the directory tree.
+
+---
+
+22. EXECUTABLE AND BUILD REQUIREMENTS
+
+This is mandatory.
+
+I want to run and debug the application easily.
+
+The project root must contain a convenient executable:
+
+TrackPadLens.exe
+
+Provide:
+
+- Debug build.
+- Release build.
+- Standalone distribution build.
+
+Use:
+
+- x64 architecture.
+- .NET 8.
+- WPF.
+- Self-contained publishing for distribution.
+- Single-file publishing where compatible.
+- Appropriate native dependency handling.
+
+For development, use framework-dependent builds when they improve compilation speed and debugging.
+
+Required commands
+
+Debug:
+
+dotnet build -c Debug
+
+Release:
+
+dotnet build -c Release
+
+Tests:
+
+dotnet test
+
+Standalone publish:
+
+dotnet publish -c Release -r win-x64 --self-contained true
+
+Configure publishing so the final executable is copied to the project root only after a successful build.
+
+Provide PowerShell scripts for:
+
+- Debug.
+- Release.
+- Publish.
+- Root executable refresh.
+
+Do not copy an outdated executable if compilation fails.
+
+Keep intermediate build artifacts organized.
+
+The root executable must launch the latest successful build.
+
+---
+
+23. TESTING AND ACCEPTANCE CRITERIA
+
+Do not stop after generating the source code.
+
+Build, execute and test the application.
+
+Core application
+
+- Launch successfully.
+- Switch between all four environments.
+- Preserve workspace state.
+- Recover autosaved work.
+
+Drawing
+
+- Smooth strokes.
+- No noticeable lag under normal conditions.
+- Correct undo and redo.
+- Selection and transformation.
+- Bounded memory usage.
+
+Documents
+
+- Open PDFs.
+- Navigate PDF pages.
+- Annotate PDFs.
+- Open supported DOCX content.
+- Import images.
+- Preserve original files.
+- Export annotated PDFs.
+
+Clipboard
+
+- Copy an image externally.
+- Paste into Whiteboard.
+- Move and resize it.
+- Copy text externally.
+- Paste it into a text object.
+- Paste screenshots from Windows Snipping Tool.
+
+Diagram reconstruction
+
+- Select an imported diagram.
+- Run recognition.
+- Preview clean-image output.
+- Preview editable-vector output.
+- Modify individual reconstructed objects.
+- Undo reconstruction.
+
+Intelligence
+
+- Recognize handwritten text.
+- Convert handwriting to editable text.
+- Recognize supported mathematical expressions.
+- Solve verified expressions.
+- Display confidence and correction options.
+
+Trackpad
+
+- Detect actual HID devices.
+- Inspect capabilities.
+- Validate coordinate mapping.
+- Test cursor isolation where supported.
+- Preserve external mouse functionality.
+
+Keyboard
+
+- Register appropriate global shortcuts.
+- Detect conflicts.
+- Customize bindings.
+- Test mode-specific shortcuts.
+
+Performance
+
+Measure:
+
+- Idle RAM.
+- Active writing RAM.
+- Large PDF RAM.
+- Large whiteboard RAM.
+- CPU while idle.
+- CPU while continuously drawing.
+- Rendering FPS.
+- Startup time.
+- Executable size.
+- Published folder size.
+
+Do not fabricate benchmark results.
+
+Clearly distinguish measured results from estimated targets.
+
+---
+
+24. DEVELOPMENT EXECUTION STRATEGY
+
+Do not attempt to implement the entire application in one uncontrolled code-generation operation.
+
+Work in milestones.
+
+Each milestone must:
+
+- Implement actual functionality.
+- Build successfully.
+- Pass relevant tests.
+- Update the project documentation.
+- Preserve existing working functionality.
+
+Milestone 1 — Foundation
+
+Build:
+
+- Project structure.
+- Application shell.
+- Main navigation.
+- Theme system.
+- Mode manager.
+- Configuration system.
+- Root executable build scripts.
+
+Milestone 2 — Unified Ink Engine
+
+Build:
+
+- Input abstraction.
+- Ink stroke model.
+- Rendering.
+- Selection.
+- Transformations.
+- Undo/redo.
+- Object storage.
+
+Milestone 3 — Standard Mode and Trackpad Lens
+
+Build:
+
+- Transparent overlay.
+- Click-through behavior.
+- Toolbar.
+- Hotkeys.
+- HID discovery.
+- Touchpad capability detection.
+- Lens.
+- Coordinate mapping.
+- Calibration.
+
+Milestone 4 — Whiteboard
+
+Build:
+
+- Infinite canvas.
+- Page-based notebook.
+- Drawing tools.
+- Images.
+- Text.
+- Shapes.
+- Grouping.
+- Object manipulation.
+- Autosave.
+
+Milestone 5 — Document Workspace
+
+Build:
+
+- PDF reader.
+- DOCX support.
+- Image viewer.
+- Document annotations.
+- Page navigation.
+- PDF export.
+- Split workspace.
+
+Milestone 6 — Clipboard and Screenshot
+
+Build:
+
+- Windows Clipboard integration.
+- Ctrl + V image insertion.
+- Text paste.
+- Built-in screenshot selection.
+- Screenshot object manipulation.
+
+Milestone 7 — Smart Ink and Mathematics
+
+Build:
+
+- OCR.
+- Handwriting recognition.
+- Text conversion.
+- Equation recognition.
+- Symbolic mathematics.
+- LaTeX rendering.
+- Confidence and correction interface.
+
+Milestone 8 — Magic and Diagram Reconstruction
+
+Build:
+
+- Magic Menu.
+- Image analysis.
+- Shape detection.
+- Text extraction.
+- Vector reconstruction.
+- Clean image generation.
+- Editable diagram output.
+
+Milestone 9 — Optimization and Release
+
+Build:
+
+- Resource profiling.
+- Rendering optimization.
+- Memory optimization.
+- Error handling.
+- Regression testing.
+- Standalone packaging.
+- Root-level executable.
+
+Do not remove working features when implementing later milestones.
+
+---
+
+25. STRICT IMPLEMENTATION RULES
+
+1. First inspect the existing project directory.
+2. Preserve unrelated files.
+3. Continue the existing TrackPadLens project if it is present.
+4. Do not overwrite existing working implementations unnecessarily.
+5. Use actual functionality instead of mock data.
+6. Do not create buttons that do nothing.
+7. No empty methods.
+8. No placeholder classes.
+9. No TODO comments in place of required functionality.
+10. No simulated hardware input presented as real hardware input.
+11. No fabricated recognition results.
+12. No fake AI processing.
+13. No unnecessary cloud dependency.
+14. No unnecessary administrator requirement.
+15. No unnecessary background services.
+16. Handle all native resources correctly.
+17. Handle application shutdown safely.
+18. Handle device disconnection and reconnection.
+19. Handle malformed documents and unsupported formats gracefully.
+20. Handle large images and documents without freezing the UI.
+21. Never destroy original document content during annotation.
+22. Preserve original handwriting when applying Magic transformations.
+23. Make destructive operations undoable where practical.
+24. Do not claim Apple Notes-level intelligence without equivalent tested functionality.
+25. Do not sacrifice the core writing experience for AI features.
+
+If a feature requires a specialized model, native driver, optional application or external service, clearly identify the dependency and provide the best practical implementation.
+
+Never conceal technical limitations.
+
+---
+
+26. FINAL DELIVERABLES
+
+I expect a working TrackPadLens Windows application with:
+
+- Complete C# source code.
+- Complete WPF interface.
+- Standard desktop annotation.
+- Trackpad Lens mode.
+- Intelligent Whiteboard.
+- Smart Study Workspace.
+- PDF viewer and annotation.
+- DOCX viewing and annotation.
+- Image importing.
+- Universal clipboard paste.
+- Screenshot selection and insertion.
+- Editable object model.
+- Lasso and object selection.
+- Image manipulation.
+- Diagram reconstruction.
+- Handwriting recognition.
+- Text conversion.
+- Mathematical recognition.
+- Mathematical solving.
+- Magic Menu.
+- Customizable keyboard shortcuts.
+- Autosave and recovery.
+- System tray.
+- Settings.
+- Unit tests.
+- README.
+- Debug executable.
+- Release executable.
+- Standalone publish output.
+
+Final implementation report
+
+At completion, provide:
+
+1. Implemented features.
+2. Tested features.
+3. Features requiring optional models or dependencies.
+4. Actual touchpad hardware compatibility.
+5. RAM consumption.
+6. CPU consumption.
+7. Rendering performance.
+8. Application startup time.
+9. Executable size.
+10. Published application size.
+11. Known limitations.
+12. Instructions to run and rebuild.
+
+FINAL PRODUCT REQUIREMENT
+
+TrackPadLens should feel like one cohesive, professional Windows application.
+
+A user must be able to:
+
+- Write over any desktop application.
+- Use their laptop touchpad as a writing tablet where hardware permits.
+- Open a PDF or DOCX and annotate it.
+- Open an image and work on it.
+- Take a screenshot of a diagram anywhere on Windows.
+- Paste that screenshot directly into a document or whiteboard.
+- Move, resize, crop and annotate it.
+- Reconstruct the diagram into editable vector objects.
+- Extract handwritten or printed text.
+- Convert handwriting into neat editable text.
+- Select mathematical equations and solve them.
+- Organize everything into notebooks and pages.
+- Switch between working environments without losing content.
+- Customize keyboard shortcuts and behavior.
+
+The application must be lightweight, responsive, offline-capable for its core functionality, and designed for real daily academic use.
+
+The ultimate goal is to build a Windows-native intelligent writing and study environment — not merely another drawing application.
+
+Prioritize actual functionality, smoothness, document fidelity, intelligent editing, maintainability and low resource consumption over unnecessary visual effects or feature count.
+
+Start by inspecting the existing project, documenting the implementation plan and identifying technical risks. Then execute the milestones sequentially, building and validating the application throughout development.

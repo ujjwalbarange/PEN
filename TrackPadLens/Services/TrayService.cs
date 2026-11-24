@@ -18,6 +18,8 @@ public sealed class TrayService : IDisposable
 
     public event Action? EnableDoodleRequested;
     public event Action? DisableDoodleRequested;
+    public event Action? OpenWorkspaceRequested;
+    public event Action? RegionCaptureRequested;
     public event Action? OpenCalibrationRequested;
     public event Action? OpenSettingsRequested;
     public event Action<bool>? StartWithWindowsToggled;
@@ -29,8 +31,10 @@ public sealed class TrayService : IDisposable
         _trayIcon = CreateVectorLensIcon();
 
         var menu = new ContextMenuStrip();
-        _enableDoodleItem = new ToolStripMenuItem("Enable Doodle Mode", null, (_, _) => EnableDoodleRequested?.Invoke());
+        _enableDoodleItem = new ToolStripMenuItem("Enable Doodle Mode (Alt+D)", null, (_, _) => EnableDoodleRequested?.Invoke());
         _disableDoodleItem = new ToolStripMenuItem("Disable Doodle Mode", null, (_, _) => DisableDoodleRequested?.Invoke());
+        var workspaceItem = new ToolStripMenuItem("Open Whiteboard & Smart Study (Alt+W)", null, (_, _) => OpenWorkspaceRequested?.Invoke());
+        var regionItem = new ToolStripMenuItem("Region Screenshot Capture (Alt+Shift+S)", null, (_, _) => RegionCaptureRequested?.Invoke());
         var calibrationItem = new ToolStripMenuItem("Calibration Information", null, (_, _) => OpenCalibrationRequested?.Invoke());
         var settingsItem = new ToolStripMenuItem("Settings", null, (_, _) => OpenSettingsRequested?.Invoke());
         _startWithWindowsItem = new ToolStripMenuItem("Start with Windows")
@@ -39,9 +43,12 @@ public sealed class TrayService : IDisposable
             Checked = startWithWindows
         };
         _startWithWindowsItem.Click += (_, _) => StartWithWindowsToggled?.Invoke(_startWithWindowsItem.Checked);
-        var openItem = new ToolStripMenuItem("Open TrackPadLens", null, (_, _) => OpenMainWindowRequested?.Invoke());
+        var openItem = new ToolStripMenuItem("Open Hardware Diagnostics", null, (_, _) => OpenMainWindowRequested?.Invoke());
         var exitItem = new ToolStripMenuItem("Exit", null, (_, _) => ExitRequested?.Invoke());
 
+        menu.Items.Add(workspaceItem);
+        menu.Items.Add(regionItem);
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_enableDoodleItem);
         menu.Items.Add(_disableDoodleItem);
         menu.Items.Add(new ToolStripSeparator());

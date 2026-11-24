@@ -1,13 +1,18 @@
 # TrackPadLens
 
-High-performance Windows 10/11 (x64, .NET 8, WPF + Win32/HID) writing tablet application that transforms a laptop's built-in **Precision Touchpad** into an absolute-positioned digital writing tablet while an external USB or Bluetooth mouse independently controls a floating transparent **Writing Lens** (`#00D2FF`).
+Intelligent Windows 10/11 (x64, .NET 8, WPF + Win32/HID + WinRT) desktop application unifying four cohesive workflows:
+1. **Standard Overlay Mode (`Alt+D`)** — Lightweight transparent click-through desktop annotation overlay & floating pill toolbar.
+2. **Trackpad Lens Mode (`Alt+T` / `Alt+D`)** — Precision Touchpad HID absolute writing tablet (`UsagePage 0x0D`, `Usage 0x05`) with a floating Writing Lens, independent external mouse movement, touchpad cursor suppression, Size Lock, Lens Box Color & Opacity, 1-Euro smoothing, adaptive palm rejection, and zero-dot 2-finger scroll filtering.
+3. **Whiteboard Mode (`Alt+W`)** — Apple Notes-inspired infinite canvas & paged notebook (`Blank`, `Ruled`, `Dotted`, `Grid`) with SpatialIndex viewport culling, smooth zoom/pan, Pen/Pencil/Marker/Highlighter/Eraser/Shapes/Connectors/Text/Equations/Sticky Notes, Lasso & Marquee selection, contextual Magic Menu, Notebooks/Pages sidebar, Autosave & crash recovery, `.tlproject` ZIP archive persistence, and PNG/JPEG/Flattened PDF export.
+4. **Smart Study Workspace** — Native read-only PDF (`Windows.Data.Pdf`) & DOCX (optional installed LibreOffice high-fidelity PDF conversion + native Open XML fallback) reader with **Document Focus / Split Workspace / Free Workspace** layouts, thumbnails, page rotation, **Send to Whiteboard** (preserving source document & page metadata), Region Screenshot Capture (`Alt+Shift+S`), Universal Clipboard Paste (`Ctrl+V`), Offline Windows OCR (`Windows.Media.Ocr`), Handwriting Recognition / Clean Handwriting / Typeset, Offline Symbolic Math Solver, and Smart Diagram Reconstruction (Clean Image + Editable Vector Objects).
 
 ---
 
 ## Requirements (Windows Build & Runtime)
-- **OS**: Windows 10 (1903+) or Windows 11, x64
+- **OS**: Windows 10 (2004 / Build 19041+) or Windows 11, x64
 - **Build SDK**: [.NET 8.0 SDK (x64)](https://dotnet.microsoft.com/download/dotnet/8.0)
-- **Hardware**: Built-in Windows Precision Touchpad exposing HID Digitizer (`UsagePage 0x0D`, `Usage 0x05`) + external USB or Bluetooth mouse
+- **Hardware**: Built-in Windows Precision Touchpad exposing HID Digitizer (`UsagePage 0x0D`, `Usage 0x05`) + external USB or Bluetooth mouse (Whiteboard & Smart Study also work seamlessly with mouse, touchscreen, or stylus)
+- **Optional**: Windows OCR Language Pack (for offline OCR/handwriting recognition) and LibreOffice (for high-fidelity Word DOCX pagination)
 - **Privileges**: Standard user (`asInvoker`) — administrator rights are never required
 
 ---
@@ -16,73 +21,105 @@ High-performance Windows 10/11 (x64, .NET 8, WPF + Win32/HID) writing tablet app
 
 All builds stage a directly launchable `TrackPadLens.exe` in the `TrackPadLens/` project root **only when the build succeeds** (failed builds never overwrite an existing root executable).
 
-### 1. Debug Build (with `.pdb` Symbols for Debugging)
+### 1. Debug Build (with `.pdb` Symbols)
 ```powershell
-# PowerShell (builds Debug x64 and stages TrackPadLens.exe + TrackPadLens.pdb in root)
 .\build.ps1 -Mode Debug
-
-# Or double-click / run from cmd.exe:
+# Or:
+.\Scripts\Build-Debug.ps1
+# Or:
 build-debug.cmd
-
-# Or directly via dotnet CLI:
-dotnet build TrackPadLens.csproj -c Debug -p:Platform=x64 -r win-x64 --no-self-contained
 ```
-Launch or attach debugger directly to:
-```powershell
-.\TrackPadLens.exe
-```
-You can also open `TrackPadLens.sln` in **Visual Studio 2022** or **VS Code (C# Dev Kit)** and press **F5** to step through `RawInputManager`, `HidTouchpadReader`, `OneEuroFilter`, and `OverlayWindow`.
 
-### 2. Release Build (Framework-Dependent, Fast Build & Small Footprint)
+### 2. Release Build (Framework-Dependent)
 ```powershell
 .\build.ps1 -Mode Release
 # Or:
-dotnet build TrackPadLens.csproj -c Release -p:Platform=x64 -r win-x64 --no-self-contained
+.\Scripts\Build-Release.ps1
 ```
 
 ### 3. Standalone Self-Contained Single-File Publish (`win-x64`)
 ```powershell
 .\build.ps1 -Mode Publish
 # Or:
-dotnet publish TrackPadLens.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -o publish
+.\Scripts\Publish.ps1
 ```
-Outputs standalone executable to both `publish\TrackPadLens.exe` and `TrackPadLens.exe` in the project root.
 
-### 4. Run Automated Unit Tests
+### 4. Windows Setup Installer (`TrackPadLens-Setup-x64.exe`)
+Requires [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`):
+```powershell
+.\build.ps1 -Mode Installer
+# Or:
+build-installer.cmd
+```
+Outputs `dist\TrackPadLens-Setup-x64.exe` (per-user or all-users install, Start Menu & Desktop shortcuts, optional Start with Windows, single-instance upgrade safety, and full Apps & Features uninstaller).
+
+### 5. Run Automated Unit Tests
 ```powershell
 .\build.ps1 -Mode Test
 # Or:
 dotnet test Tests\TrackPadLens.Tests.csproj -c Release
 ```
 
-### 5. Automated GitHub Actions Build (`.github/workflows/build-windows-exe.yml`)
-Push to `main`/`master`, open a PR, tag `v*`, or click **Run workflow** in the GitHub **Actions** tab to build on `windows-latest`:
-- Runs `dotnet test Tests\TrackPadLens.Tests.csproj -c Release`
-- Uploads **`TrackPadLens-win-x64-Standalone`** (`TrackPadLens.exe` + `SHA256SUMS.txt`)
-- Uploads **`TrackPadLens-win-x64-Debug`** (`TrackPadLens.exe` + `TrackPadLens.pdb`)
-- Uploads **`TrackPadLens-win-x64-FrameworkDependent`**
-- Automatically attaches `TrackPadLens.exe` to a GitHub Release when pushing a `v*` tag (e.g. `git tag v1.0.0 && git push origin v1.0.0`).
+### 6. Automated GitHub Actions Build (`.github/workflows/build-windows-exe.yml`)
+Builds on `windows-latest`, runs the entire xUnit test suite, and uploads:
+- `TrackPadLens-win-x64-Setup-Installer` (`TrackPadLens-Setup-x64.exe` + `SHA256SUMS.txt`)
+- `TrackPadLens-win-x64-Standalone` (`TrackPadLens.exe` + `SHA256SUMS.txt`)
+- `TrackPadLens-win-x64-Debug` (`TrackPadLens.exe` + `TrackPadLens.pdb`)
+- `TrackPadLens-win-x64-FrameworkDependent`
 
 ---
 
-## Operational Hardware Modes (Honest Windows Compatibility)
+## Architecture Overview
 
-Windows manages Precision Touchpads inside the system input stack, and `WH_MOUSE_LL` does **not** expose the originating Raw Input device handle (`LLMHF_INJECTED` only indicates synthetic injection, never touchpad vs. external mouse). TrackPadLens never blocks all mouse input or fabricates fake touchpad packets.
-
-| Mode | Condition | Behavior |
-|---|---|---|
-| **Mode A — Native Absolute Touchpad** | Precision Touchpad exposes valid absolute X/Y HID reports **and** an optional WHQL-signed KMDF HID filter driver implements `ICursorIsolationProvider`. | Full native absolute coordinates with per-device touchpad cursor suppression. |
-| **Mode B — Compatible Mode (Default User-Mode)** | Precision Touchpad exposes valid absolute X/Y HID reports via `RegisterRawInputDevices(0x0D:0x05)` with no kernel filter driver installed. | Full native absolute coordinates for drawing; Windows may still move the cursor on touch. Hold **Shift** or **Right-Click** (Anchor Lock) to freeze the Lens frame while writing; external USB/Bluetooth mouse remains 100% functional. |
-| **Mode C — Hardware Unsupported** | No Precision Touchpad with usable absolute X/Y collections was discovered. | Touchpad ink drawing is disabled and the Diagnostics window explains the exact HID descriptor reason. |
+```text
+TrackPadLens/
+├── Core/           # WorkspaceModes & ModeManager (4 environments)
+├── Input/          # NormalizedInputEvent model (Touchpad/Mouse/Touchscreen/Stylus)
+├── Hardware/       # Precision Touchpad Raw HID discovery, parser & cursor isolation
+├── Processing/     # 1-Euro Filter, CoordinateMapper, Adaptive PalmRejection, StrokeProcessor
+├── Rendering/      # Low-latency WPF DrawingVisual InkEngine (Overlay)
+├── Objects/        # Unified polymorphic DocumentObject model + ObjectManager
+├── Selection/      # Uniform-grid SpatialIndex + SelectionManager (Marquee & Lasso)
+├── Commands/       # CommandManager (200-step Undo/Redo) + ShortcutManager (scoped conflict check)
+├── Storage/        # SHA-256 AssetStore, .tlproject ZIP ProjectSerializer, AutosaveService
+├── Documents/      # Native Windows PdfEngine, DocxEngine, SimplePdfWriter, DocumentExporter
+├── Clipboard/      # Universal ClipboardService (PNG alpha, DIB, files, Unicode text)
+├── Intelligence/   # Offline Windows OcrService, SmartInkEngine, MathSolverEngine, DiagramRecognitionEngine
+├── UI/             # OverlayWindow, FloatingToolbar, WorkspaceWindow, WorkspaceCanvasControl,
+│                   # MagicDialogs, RegionCaptureWindow, SettingsWindow, CalibrationWindow
+├── Native/         # Win32Interop, HotkeyManager, MouseHookManager, WindowStyles
+├── Services/       # ConfigurationService, StartupService, ScreenshotService, TrayService
+├── Scripts/        # Build-Debug.ps1, Build-Release.ps1, Publish.ps1
+├── Installer/      # TrackPadLens.iss (Inno Setup 6)
+└── Tests/          # xUnit test suite covering hardware math, workspace, storage, documents & math solver
+```
 
 ---
 
 ## Default Controls & Shortcuts
 
-- **Alt + D**: Toggle Doodle Mode ON / OFF
-- **Mouse Wheel (while Doodle Mode ON)**: Smoothly resize the Writing Lens (`100px` min to `90%` screen width) preserving aspect ratio, with a 500ms scale badge (`1.0x`, `1.2x`, ...)
-- **Hold Shift or Right-Click**: Anchor Lock — freezes the Lens position while continuing to draw inside it (without swallowing normal right-click interactions)
-- **Ctrl + Z**: Undo last stroke (or immediately restore strokes after `Esc` Clear All)
-- **Ctrl + S**: Save single-pass PNG snapshot to `Pictures\TrackPadLens\TrackPadLens_yyyyMMdd_HHmmss.png`
-- **Esc**: Clear all ink (reversible via `Ctrl + Z`)
-- **System Tray**: Right-click tray icon for Doodle Mode toggle, Calibration, Settings, Start with Windows (`HKCU\...\Run`), Diagnostics, and clean Exit
+### Global System Shortcuts
+- **`Alt + D`**: Toggle Doodle Mode / Standard Overlay ON / OFF
+- **`Alt + T`**: Activate Trackpad Lens Mode directly
+- **`Alt + W`**: Open / Focus Whiteboard & Smart Study Workspace
+- **`Alt + Shift + S`**: Multi-Monitor Region Screenshot Capture (inserts directly into Workspace)
+- **`Ctrl + Z`** / **`Ctrl + S`**: Overlay Undo / Save Full Snapshot
+
+### Doodle-Mode-Only Quick Keys (Active ONLY while Doodle Mode is ON)
+- **`E`**: Whole-stroke Eraser
+- **`1` / `2` / `3`**: Thin / Medium / Thick stroke size
+- **`D`**: Return to last-used Pen color or cycle through Pen colors
+- **`C`**: Clear all overlay ink (reversible via `Ctrl + Z`)
+- **Mouse Wheel (when Lens Size Unlocked)**: Smoothly resize the Writing Lens; click padlock on floating bar to lock size
+- **Hold `Shift` or Right-Click**: Anchor Lock (freeze Lens position while drawing)
+
+### Workspace-Local Shortcuts (Active ONLY inside TrackPadLens Workspace — never stolen from other apps)
+- **`V` / `L` / `P` / `H` / `E`**: Select / Lasso / Pen / Highlighter / Eraser
+- **`Ctrl + Space`**: Toggle Contextual Magic Menu
+- **`Ctrl + Shift + T`**: Convert Selected Handwriting to Text
+- **`Ctrl + Enter`**: Recognize & Solve Selected Equation
+- **`Ctrl + Z` / `Ctrl + Y`**: Undo / Redo
+- **`Ctrl + V` / `Ctrl + D`**: Universal Paste / Duplicate Selection
+- **`Ctrl + G` / `Ctrl + Shift + G`**: Group / Ungroup Selection
+- **`Ctrl + +` / `Ctrl + -` / `Ctrl + 0`**: Zoom In / Zoom Out / Fit Canvas
+- **`Ctrl + S` / `Ctrl + N` / `Ctrl + F` / `Tab`**: Save Workspace / New Page / Search / Toggle Toolbar

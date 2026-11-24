@@ -70,12 +70,72 @@ jobs:
             throw "Expected standalone TrackPadLens.exe was not generated."
           }
 
+      - name: Publish Self-Contained Payload for Setup Installer (win-x64)
+        run: |
+          New-Item -ItemType Directory -Force -Path ..\artifacts\installer-payload | Out-Null
+          dotnet publish TrackPadLens.csproj -c Release -p:Platform=x64 -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=false `
+            -o ..\artifacts\installer-payload
+          if (-not (Test-Path ..\artifacts\installer-payload\TrackPadLens.exe)) {
+            throw "Expected installer payload TrackPadLens.exe was not generated."
+          }
+
+      - name: Build Windows Setup Installer (Inno Setup 6)
+        run: |
+          $iscc = @(
+            (Get-Command iscc -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -ErrorAction SilentlyContinue),
+            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+            "C:\Program Files\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+
+          if (-not $iscc) {
+            Write-Host "Inno Setup 6 not preinstalled on runner; installing via Chocolatey..."
+            choco install innosetup -y --no-progress
+            $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          }
+          if (-not (Test-Path $iscc)) {
+            throw "ISCC.exe was not found after installation."
+          }
+
+          [xml]$projXml = Get-Content TrackPadLens.csproj
+          $appVersion = ($projXml.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1)
+          if ("${{ github.ref_type }}" -eq "tag" -and "${{ github.ref_name }}" -match '^v?(\d+\.\d+\.\d+)$') {
+            $appVersion = $Matches[1]
+          }
+          if (-not $appVersion) { $appVersion = "1.0.0" }
+
+          $payloadAbs = (Resolve-Path ..\artifacts\installer-payload).Path
+          New-Item -ItemType Directory -Force -Path ..\artifacts\installer | Out-Null
+          $outputAbs = (Resolve-Path ..\artifacts\installer).Path
+
+          & $iscc "/DAppVersion=$appVersion" "/DPayloadDir=$payloadAbs" "/DOutputDir=$outputAbs" Installer\TrackPadLens.iss
+          if ($LASTEXITCODE -ne 0) {
+            throw "Inno Setup compiler failed with exit code $LASTEXITCODE"
+          }
+          if (-not (Test-Path ..\artifacts\installer\TrackPadLens-Setup-x64.exe)) {
+            throw "Expected installer TrackPadLens-Setup-x64.exe was not generated."
+          }
+
       - name: Generate SHA-256 Checksums
         working-directory: artifacts
         run: |
+          $setupHash = (Get-FileHash installer\TrackPadLens-Setup-x64.exe -Algorithm SHA256).Hash
           $standaloneHash = (Get-FileHash standalone\TrackPadLens.exe -Algorithm SHA256).Hash
-          "SHA256 (TrackPadLens.exe standalone win-x64) = $standaloneHash" | Out-File -Encoding utf8 SHA256SUMS.txt
+          @(
+            "SHA256 (TrackPadLens-Setup-x64.exe installer win-x64) = $setupHash"
+            "SHA256 (TrackPadLens.exe standalone win-x64) = $standaloneHash"
+          ) | Out-File -Encoding utf8 SHA256SUMS.txt
           Get-Content SHA256SUMS.txt
+
+      - name: Upload Windows Setup Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrackPadLens-win-x64-Setup-Installer
+          path: |
+            artifacts/installer/TrackPadLens-Setup-x64.exe
+            artifacts/SHA256SUMS.txt
+          if-no-files-found: error
 
       - name: Upload Standalone Single-File EXE Artifact
         uses: actions/upload-artifact@v4
@@ -105,11 +165,12 @@ jobs:
         working-directory: artifacts
         run: Compress-Archive -Path debug\* -DestinationPath TrackPadLens-win-x64-Debug.zip -Force
 
-      - name: Attach TrackPadLens.exe to GitHub Release
+      - name: Attach Installer & Executables to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
+            artifacts/installer/TrackPadLens-Setup-x64.exe
             artifacts/standalone/TrackPadLens.exe
             artifacts/TrackPadLens-win-x64-Debug.zip
             artifacts/SHA256SUMS.txt

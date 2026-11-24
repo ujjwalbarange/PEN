@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -16,19 +17,20 @@
     <Product>TrackPadLens</Product>
     <Description>High-performance Windows writing tablet turning a Precision Touchpad into an absolute-positioned writing lens.</Description>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ApplicationIcon>Assets\TrackPadLens.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <PublishDir>publish\</PublishDir>
-    <PublishSingleFile Condition="'$(SelfContained)' == 'true'">true</PublishSingleFile>
-    <IncludeNativeLibrariesForSelfExtract Condition="'$(SelfContained)' == 'true'">true</IncludeNativeLibrariesForSelfExtract>
-    <EnableCompressionInSingleFile Condition="'$(SelfContained)' == 'true'">true</EnableCompressionInSingleFile>
+    <PublishSingleFile Condition="'$(PublishSingleFile)' == '' And '$(SelfContained)' == 'true'">true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract Condition="'$(PublishSingleFile)' == 'true'">true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile Condition="'$(PublishSingleFile)' == 'true'">true</EnableCompressionInSingleFile>
     <DebugType Condition="'$(Configuration)' == 'Release'">embedded</DebugType>
   </PropertyGroup>
 
-  <!-- Keep Tests subfolder excluded from main application compilation -->
+  <!-- Keep Tests, Installer, and packaging folders excluded from main application compilation -->
   <ItemGroup>
     <Compile Remove="Tests\**" />
     <EmbeddedResource Remove="Tests\**" />
-    <None Remove="Tests\**" />
+    <None Remove="Tests\**;Installer\**;Scripts\**;publish-installer\**;dist\**" />
     <Page Remove="Tests\**" />
   </ItemGroup>
 

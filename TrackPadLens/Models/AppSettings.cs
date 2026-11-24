@@ -1,3 +1,5 @@
+using TrackPadLens.Core;
+
 namespace TrackPadLens.Models;
 
 /// <summary>
@@ -33,11 +35,23 @@ public sealed class AppSettings
     public DrawingTool ActiveTool { get; set; } = DrawingTool.Pen;
     public bool CompactToolbar { get; set; } = false;
 
-    // Hotkeys (serialized as "Modifiers+Key", e.g., "Alt+D", "Ctrl+Z", "Ctrl+S", "C")
+    // Hotkeys (serialized as "Modifiers+Key", e.g., "Alt+D", "Alt+T", "Alt+W", "Alt+Shift+S")
     public string HotkeyToggleDoodle { get; set; } = "Alt+D";
+    public string HotkeyTrackpadLens { get; set; } = "Alt+T";
+    public string HotkeyWhiteboard { get; set; } = "Alt+W";
+    public string HotkeyRegionCapture { get; set; } = "Alt+Shift+S";
     public string HotkeyUndo { get; set; } = "Ctrl+Z";
     public string HotkeySaveSnapshot { get; set; } = "Ctrl+S";
     public string HotkeyClearInk { get; set; } = "C";
+
+    // Workspace, Smart Study, Documents & Theme
+    public AppThemeMode ThemeMode { get; set; } = AppThemeMode.Dark;
+    public int AutosaveIntervalSeconds { get; set; } = 45;
+    public bool PreferLibreOfficeForDocx { get; set; } = true;
+    public string DefaultWorkspaceDirectory { get; set; } = string.Empty;
+    public List<string> RecentProjects { get; set; } = new();
+    public List<string> RecentDocuments { get; set; } = new();
+    public Dictionary<string, string> ShortcutOverrides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
     // System
     public const int CurrentSettingsVersion = 2;
@@ -48,6 +62,22 @@ public sealed class AppSettings
 
     // Touchpad calibration
     public CalibrationProfile Calibration { get; set; } = new();
+
+    public void AddRecentProject(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+        RecentProjects.RemoveAll(p => p.Equals(path, StringComparison.OrdinalIgnoreCase));
+        RecentProjects.Insert(0, path);
+        if (RecentProjects.Count > 12) RecentProjects.RemoveRange(12, RecentProjects.Count - 12);
+    }
+
+    public void AddRecentDocument(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+        RecentDocuments.RemoveAll(p => p.Equals(path, StringComparison.OrdinalIgnoreCase));
+        RecentDocuments.Insert(0, path);
+        if (RecentDocuments.Count > 16) RecentDocuments.RemoveRange(16, RecentDocuments.Count - 16);
+    }
 
     public void Sanitize()
     {
@@ -63,6 +93,15 @@ public sealed class AppSettings
         PalmMaxContactWidthLogical = Math.Clamp(PalmMaxContactWidthLogical, 10, 100000);
         PalmMaxContactHeightLogical = Math.Clamp(PalmMaxContactHeightLogical, 10, 100000);
         PalmMaxAreaFraction = Math.Clamp(PalmMaxAreaFraction, 0.005, 0.5);
+        AutosaveIntervalSeconds = Math.Clamp(AutosaveIntervalSeconds, 10, 600);
+
+        if (string.IsNullOrWhiteSpace(HotkeyTrackpadLens)) HotkeyTrackpadLens = "Alt+T";
+        if (string.IsNullOrWhiteSpace(HotkeyWhiteboard)) HotkeyWhiteboard = "Alt+W";
+        if (string.IsNullOrWhiteSpace(HotkeyRegionCapture)) HotkeyRegionCapture = "Alt+Shift+S";
+
+        RecentProjects ??= new List<string>();
+        RecentDocuments ??= new List<string>();
+        ShortcutOverrides ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         // One-time migration from v1 default Escape -> v2 Doodle-Mode-only C
         if (SettingsVersion < CurrentSettingsVersion)

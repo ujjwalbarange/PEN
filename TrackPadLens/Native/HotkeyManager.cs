@@ -14,7 +14,10 @@ public enum HotkeyAction
     DoodleThicknessThin = 1006,
     DoodleThicknessMedium = 1007,
     DoodleThicknessThick = 1008,
-    DoodlePenCycle = 1009
+    DoodlePenCycle = 1009,
+    OpenTrackpadLensMode = 1010,
+    OpenWhiteboardWorkspace = 1011,
+    RegionScreenshotCapture = 1012
 }
 
 public readonly record struct HotkeyBinding(uint Modifiers, uint VirtualKey, string DisplayString);

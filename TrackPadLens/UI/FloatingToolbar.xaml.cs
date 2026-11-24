@@ -31,6 +31,7 @@ public partial class FloatingToolbar : Window
     public event Action? ClearRequested;
     public event Action? SaveSnapshotRequested;
     public event Action? ToggleSizeLockRequested;
+    public event Action? OpenWorkspaceRequested;
     public event Action? CalibrationRequested;
     public event Action? SettingsRequested;
     public event Action? MinimizeToTrayRequested;
@@ -115,6 +116,7 @@ public partial class FloatingToolbar : Window
     private void ClearBtn_Click(object sender, RoutedEventArgs e) => ClearRequested?.Invoke();
     private void SnapshotBtn_Click(object sender, RoutedEventArgs e) => SaveSnapshotRequested?.Invoke();
     private void SizeLockBtn_Click(object sender, RoutedEventArgs e) => ToggleSizeLockRequested?.Invoke();
+    private void WorkspaceBtn_Click(object sender, RoutedEventArgs e) => OpenWorkspaceRequested?.Invoke();
     private void CalibrationBtn_Click(object sender, RoutedEventArgs e) => CalibrationRequested?.Invoke();
     private void SettingsBtn_Click(object sender, RoutedEventArgs e) => SettingsRequested?.Invoke();
     private void TrayBtn_Click(object sender, RoutedEventArgs e) => MinimizeToTrayRequested?.Invoke();

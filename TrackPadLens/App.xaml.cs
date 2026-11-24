@@ -2,20 +2,23 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Threading;
+using TrackPadLens.Commands;
+using TrackPadLens.Core;
 using TrackPadLens.Hardware;
 using TrackPadLens.Models;
 using TrackPadLens.Native;
 using TrackPadLens.Processing;
 using TrackPadLens.Rendering;
 using TrackPadLens.Services;
+using TrackPadLens.Storage;
 using TrackPadLens.UI;
 
 namespace TrackPadLens;
 
 /// <summary>
 /// Central application orchestrator managing single-instance locking, hardware discovery,
-/// overlay & toolbar coordination, global hotkeys, system tray, crash safety, and complete
-/// deterministic disposal of all Win32 handles, hooks, and native resources.
+/// overlay & toolbar coordination, Whiteboard & Smart Study Workspace, Autosave/Recovery,
+/// global hotkeys, system tray, crash safety, and deterministic disposal of all Win32 resources.
 /// </summary>
 public partial class App : Application
 {
@@ -32,6 +35,10 @@ public partial class App : Application
     private OverlayWindow? _overlayWindow;
     private FloatingToolbar? _toolbar;
     private MainWindow? _mainWindow;
+    private WorkspaceWindow? _workspaceWindow;
+    private ModeManager? _modeManager;
+    private ShortcutManager? _shortcutManager;
+    private AutosaveService? _autosaveService;
 
     private AppSettings _settings = new();
     private bool _doodleModeEnabled;
@@ -96,12 +103,15 @@ public partial class App : Application
         _startupService = new StartupService();
         _screenshotService = new ScreenshotService();
         _calibrationManager = new CalibrationManager();
+        _modeManager = new ModeManager();
+        _shortcutManager = new ShortcutManager();
 
         _settings = _configService.Load();
         _settings.StartWithWindows = _startupService.IsEnabled();
+        _shortcutManager.ApplyOverrides(_settings.ShortcutOverrides);
         _currentLensWidthDip = _settings.DefaultLensWidthDip;
 
-        // 1. Hardware Input Engine first (Phase 15 rule #5)
+        // 1. Hardware Input Engine first
         _hardware = new HardwareInputManager
         {
             SuppressTouchpadCursorEnabled = _settings.SuppressTouchpadCursorInDoodleMode
@@ -153,13 +163,31 @@ public partial class App : Application
         SyncToolbar();
         _toolbar.Show();
 
-        // 4. Global Hotkeys
+        // 4. Autosave & Unified Whiteboard / Smart Study Workspace
+        _autosaveService = new AutosaveService(new ProjectSerializer(), intervalSeconds: _settings.AutosaveIntervalSeconds);
+        _workspaceWindow = new WorkspaceWindow(
+            () => _settings,
+            SaveSettings,
+            OpenSettingsWindow,
+            ShowMainWindow,
+            ActivateTrackpadLensMode,
+            TriggerRegionScreenshotCapture,
+            _modeManager,
+            _autosaveService);
+
+        bool hadRecovery = _autosaveService.HasRecoverySnapshot();
+        _autosaveService.Start(
+            () => _workspaceWindow?.Document,
+            () => _workspaceWindow?.Assets,
+            _settings.AutosaveIntervalSeconds);
+
+        // 5. Global Hotkeys
         _hotkeys = new HotkeyManager();
         _hotkeys.Initialize();
         _hotkeys.HotkeyPressed += OnHotkeyPressed;
         RegisterConfiguredHotkeys();
 
-        // 5. Wire Hardware Events
+        // 6. Wire Hardware Events
         _hardware.TouchpadFrameReceived += OnTouchpadFrameReceived;
         _hardware.ExternalMouseUpdated += OnExternalMouseUpdated;
         _hardware.ExternalMouseWheel += OnExternalMouseWheel;
@@ -174,7 +202,7 @@ public partial class App : Application
             _mainWindow?.RefreshDiagnostics();
         });
 
-        // 6. Diagnostics Main Window
+        // 7. Diagnostics Main Window
         _mainWindow = new MainWindow(
             _hardware,
             _overlayWindow,
@@ -186,12 +214,16 @@ public partial class App : Application
             OpenCalibrationWindow,
             OpenSettingsWindow,
             CaptureSnapshot,
-            SetHardwareTestMode);
+            SetHardwareTestMode,
+            ShowWorkspaceWindow,
+            TriggerRegionScreenshotCapture);
 
-        // 7. System Tray
+        // 8. System Tray
         _trayService = new TrayService(_settings.StartWithWindows);
         _trayService.EnableDoodleRequested += () => SetDoodleMode(true);
         _trayService.DisableDoodleRequested += () => SetDoodleMode(false);
+        _trayService.OpenWorkspaceRequested += ShowWorkspaceWindow;
+        _trayService.RegionCaptureRequested += TriggerRegionScreenshotCapture;
         _trayService.OpenCalibrationRequested += OpenCalibrationWindow;
         _trayService.OpenSettingsRequested += OpenSettingsWindow;
         _trayService.StartWithWindowsToggled += OnStartWithWindowsToggled;
@@ -214,6 +246,24 @@ public partial class App : Application
         if (!startMinimized)
         {
             _mainWindow.Show();
+        }
+
+        if (hadRecovery && _autosaveService != null)
+        {
+            var restoreChoice = MessageBox.Show(
+                "An autosaved Whiteboard & Study session was found from a previous session.\n\nRestore it now?",
+                "TrackPadLens — Session Recovery",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+            if (restoreChoice == MessageBoxResult.Yes)
+            {
+                ShowWorkspaceWindow();
+                _workspaceWindow?.TryLoadProjectFile(_autosaveService.RecoveryFilePath);
+            }
+            else
+            {
+                _autosaveService.ClearRecoverySnapshot();
+            }
         }
     }
 
@@ -264,6 +314,7 @@ public partial class App : Application
             SaveSettings();
             SyncToolbar();
         };
+        _toolbar.OpenWorkspaceRequested += ShowWorkspaceWindow;
         _toolbar.UndoRequested += () => _inkEngine.Undo();
         _toolbar.ClearRequested += HandleClearInk;
         _toolbar.SaveSnapshotRequested += CaptureSnapshot;
@@ -273,7 +324,7 @@ public partial class App : Application
         {
             _toolbar.Hide();
             _mainWindow?.Hide();
-            _trayService?.ShowBalloon("TrackPadLens", "Running in system tray. Press Alt+D to toggle Doodle Mode.");
+            _trayService?.ShowBalloon("TrackPadLens", "Running in system tray. Press Alt+D for Doodle Mode or Alt+W for Whiteboard Workspace.");
         };
         _toolbar.CompactModeChanged += compact =>
         {
@@ -312,7 +363,6 @@ public partial class App : Application
             _overlayWindow.DpiScaleX,
             _overlayWindow.DpiScaleY);
 
-        // Convert virtual screen DIP into overlay window-local DIP
         _lastCursorDipX = dipX - _overlayWindow.Left;
         _lastCursorDipY = dipY - _overlayWindow.Top;
 
@@ -357,6 +407,12 @@ public partial class App : Application
 
     private void ToggleDoodleMode() => SetDoodleMode(!_doodleModeEnabled);
 
+    private void ActivateTrackpadLensMode()
+    {
+        _modeManager?.SwitchTo(WorkspaceEnvironment.TrackpadLens);
+        SetDoodleMode(true);
+    }
+
     private void SetDoodleMode(bool enable)
     {
         if (enable && _hardware?.CurrentMode == OperationalMode.HardwareUnsupported)
@@ -372,6 +428,9 @@ public partial class App : Application
         }
 
         _doodleModeEnabled = enable;
+        if (enable) _modeManager?.SwitchTo(WorkspaceEnvironment.TrackpadLens);
+        else _modeManager?.SwitchTo(WorkspaceEnvironment.StandardOverlay);
+
         if (_strokeProcessor != null)
         {
             _strokeProcessor.IsDoodleModeEnabled = enable;
@@ -398,6 +457,15 @@ public partial class App : Application
         {
             case HotkeyAction.ToggleDoodleMode:
                 ToggleDoodleMode();
+                break;
+            case HotkeyAction.OpenTrackpadLensMode:
+                ActivateTrackpadLensMode();
+                break;
+            case HotkeyAction.OpenWhiteboardWorkspace:
+                ShowWorkspaceWindow();
+                break;
+            case HotkeyAction.RegionScreenshotCapture:
+                TriggerRegionScreenshotCapture();
                 break;
             case HotkeyAction.Undo:
                 _inkEngine?.Undo();
@@ -457,6 +525,61 @@ public partial class App : Application
         }
     }
 
+    private void ShowWorkspaceWindow()
+    {
+        if (_doodleModeEnabled)
+        {
+            SetDoodleMode(false);
+        }
+
+        _modeManager?.SwitchTo(WorkspaceEnvironment.Whiteboard);
+        if (_workspaceWindow == null) return;
+        _workspaceWindow.Show();
+        if (_workspaceWindow.WindowState == WindowState.Minimized)
+        {
+            _workspaceWindow.WindowState = WindowState.Normal;
+        }
+        _workspaceWindow.Activate();
+    }
+
+    private void TriggerRegionScreenshotCapture()
+    {
+        if (_modalDialogOpen) return;
+        bool wasDoodle = _doodleModeEnabled;
+        if (wasDoodle) SetDoodleMode(false);
+
+        _modalDialogOpen = true;
+        UpdateDoodleModeHotkeys(false);
+
+        bool toolbarWasVisible = _toolbar?.IsVisible == true;
+        _overlayWindow?.SetTemporaryFrameHiddenForCapture(true);
+        _toolbar?.Hide();
+        Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
+
+        byte[]? captured = null;
+        try
+        {
+            var captureWin = new RegionCaptureWindow();
+            if (captureWin.ShowDialog() == true)
+            {
+                captured = captureWin.CapturedPngBytes;
+            }
+        }
+        finally
+        {
+            _overlayWindow?.SetTemporaryFrameHiddenForCapture(false);
+            if (toolbarWasVisible) _toolbar?.Show();
+            _modalDialogOpen = false;
+            UpdateDoodleModeHotkeys(_doodleModeEnabled);
+        }
+
+        if (captured != null && captured.Length > 0)
+        {
+            ShowWorkspaceWindow();
+            _workspaceWindow?.InsertCapturedRegionPng(captured);
+        }
+    }
+
     private void HandleClearInk()
     {
         _strokeProcessor?.CancelActiveStroke();
@@ -464,7 +587,6 @@ public partial class App : Application
 
         if (_inkEngine == null || _inkEngine.Strokes.Count == 0) return;
 
-        // ClearAll pushes a single reversible batch onto the undo stack so Ctrl+Z immediately restores all strokes
         _inkEngine.ClearAll();
         _trayService?.ShowBalloon("Ink Cleared", "Press Ctrl+Z to restore cleared strokes.");
     }
@@ -477,7 +599,6 @@ public partial class App : Application
             _settings.MonitorScope,
             beforeCapture: () =>
             {
-                // Keep ink visible while hiding transient toolbar/cyan alignment box during capture
                 _overlayWindow.SetTemporaryFrameHiddenForCapture(true);
                 _toolbar?.Hide();
                 Dispatcher.Invoke(() => { }, DispatcherPriority.Render);
@@ -503,6 +624,9 @@ public partial class App : Application
         if (_hotkeys == null) return;
         _hotkeys.UnregisterAll();
         _hotkeys.Register(HotkeyAction.ToggleDoodleMode, _settings.HotkeyToggleDoodle);
+        _hotkeys.Register(HotkeyAction.OpenTrackpadLensMode, _settings.HotkeyTrackpadLens);
+        _hotkeys.Register(HotkeyAction.OpenWhiteboardWorkspace, _settings.HotkeyWhiteboard);
+        _hotkeys.Register(HotkeyAction.RegionScreenshotCapture, _settings.HotkeyRegionCapture);
         _hotkeys.Register(HotkeyAction.Undo, _settings.HotkeyUndo);
         _hotkeys.Register(HotkeyAction.SaveSnapshot, _settings.HotkeySaveSnapshot);
         UpdateDoodleModeHotkeys(_doodleModeEnabled && !_modalDialogOpen);
@@ -510,7 +634,7 @@ public partial class App : Application
 
     /// <summary>
     /// Registers single-key drawing bindings (E, 1, 2, 3, D, and Clear Ink [default C])
-    /// ONLY while Doodle Mode is ON and no modal Settings/Calibration dialog is open,
+    /// ONLY while Doodle Mode is ON and no modal dialog is open,
     /// so normal typing in other apps or settings fields is never intercepted.
     /// </summary>
     private void UpdateDoodleModeHotkeys(bool enable)
@@ -563,7 +687,7 @@ public partial class App : Application
         UpdateDoodleModeHotkeys(false);
         try
         {
-            var win = new SettingsWindow(_settings, updated =>
+            var win = new SettingsWindow(_settings, _shortcutManager ?? new ShortcutManager(), updated =>
             {
                 _settings = updated;
                 SaveSettings();
@@ -577,6 +701,8 @@ public partial class App : Application
                 _overlayWindow?.ApplyLensAppearance(
                     ParseColorOrDefault(_settings.LensBorderColorHex, Color.FromRgb(0x00, 0xD2, 0xFF)),
                     _settings.LensBorderOpacity);
+                _autosaveService?.UpdateInterval(_settings.AutosaveIntervalSeconds);
+                _workspaceWindow?.ApplyThemeFromSettings();
                 RegisterConfiguredHotkeys();
                 OnStartWithWindowsToggled(_settings.StartWithWindows);
                 UpdateLensPositionFromLastCursor();
@@ -636,10 +762,7 @@ public partial class App : Application
                 return c;
             }
         }
-        catch
-        {
-            // Ignore malformed config color string
-        }
+        catch { }
         return fallback;
     }
 
@@ -647,20 +770,22 @@ public partial class App : Application
     {
         if (_shuttingDown) return;
         _shuttingDown = true;
+        _autosaveService?.SaveIfDirty();
         CleanupAllResources();
         Shutdown(0);
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        // Keep mouse/system safe even if an unexpected UI exception happens
         _hardware?.SetDoodleModeCursorIsolation(false);
+        _autosaveService?.SaveIfDirty();
         e.Handled = true;
         _trayService?.ShowBalloon("TrackPadLens Recovered", $"Unexpected UI error handled safely: {e.Exception.Message}", System.Windows.Forms.ToolTipIcon.Warning);
     }
 
     private void OnDomainUnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
+        _autosaveService?.SaveIfDirty();
         CleanupAllResources();
     }
 
@@ -672,6 +797,9 @@ public partial class App : Application
 
     private void CleanupAllResources()
     {
+        _autosaveService?.Dispose();
+        _autosaveService = null;
+
         _hotkeys?.Dispose();
         _hotkeys = null;
 
@@ -680,6 +808,13 @@ public partial class App : Application
 
         _trayService?.Dispose();
         _trayService = null;
+
+        if (_workspaceWindow != null)
+        {
+            _workspaceWindow.AllowFullClose();
+            _workspaceWindow.Close();
+            _workspaceWindow = null;
+        }
 
         if (_mainWindow != null)
         {

@@ -2,172 +2,276 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="TrackPadLens — Settings"
-        Width="560"
-        Height="680"
+        Width="660"
+        Height="640"
         Background="#0F172A"
         Foreground="#E2E8F0"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
-    <Grid Margin="20">
+    <Grid Margin="18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="TrackPadLens Settings" FontSize="18" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="0,0,0,14"/>
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="TrackPadLens Settings" FontSize="19" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+            <TextBlock Text="Configure Writing Lens appearance, Precision Touchpad smoothing, Documents, Offline Intelligence, and Shortcuts."
+                       FontSize="11.5" Foreground="#94A3B8" Margin="0,2,0,0"/>
+        </StackPanel>
 
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="0,0,8,0">
-                <TextBlock Text="Floating Writing Lens &amp; Display" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,0,0,8"/>
-                <Grid Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Mouse Anchor Mode" VerticalAlignment="Center"/>
-                    <ComboBox x:Name="AnchorModeCombo" Grid.Column="1" Background="#1E293B" Foreground="#0F172A">
-                        <ComboBoxItem Content="Centered" Tag="Centered"/>
-                        <ComboBoxItem Content="Top-Left" Tag="TopLeft"/>
-                    </ComboBox>
-                </Grid>
+        <TabControl Grid.Row="1" Background="#111827" BorderBrush="#1E293B" Foreground="#E2E8F0">
+            <!-- TAB 1: APPEARANCE & LENS -->
+            <TabItem Header="Appearance &amp; Lens">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="Workspace Theme" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Whiteboard &amp; Study Theme" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="ThemeModeCombo" Grid.Column="1" Foreground="#0F172A">
+                                <ComboBoxItem Content="Dark (Slate)"/>
+                                <ComboBoxItem Content="Light (Paper)"/>
+                                <ComboBoxItem Content="System Default"/>
+                            </ComboBox>
+                        </Grid>
 
-                <Grid Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Anchor Offset X / Y (DIP)" VerticalAlignment="Center"/>
-                    <TextBox x:Name="OffsetXBox" Grid.Column="1" Margin="0,0,6,0" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
-                    <TextBox x:Name="OffsetYBox" Grid.Column="2" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
-                </Grid>
+                        <TextBlock Text="Floating Writing Lens &amp; Display" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,4,0,8"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Mouse Anchor Mode" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="AnchorModeCombo" Grid.Column="1" Foreground="#0F172A">
+                                <ComboBoxItem Content="Centered" Tag="Centered"/>
+                                <ComboBoxItem Content="Top-Left" Tag="TopLeft"/>
+                            </ComboBox>
+                        </Grid>
 
-                <Grid Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Overlay Monitor Scope" VerticalAlignment="Center"/>
-                    <ComboBox x:Name="MonitorScopeCombo" Grid.Column="1" Background="#1E293B" Foreground="#0F172A">
-                        <ComboBoxItem Content="Primary Monitor Only" Tag="PrimaryOnly"/>
-                        <ComboBoxItem Content="All Monitors (Virtual Screen)" Tag="AllMonitors"/>
-                    </ComboBox>
-                </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Anchor Offset X / Y (DIP)" VerticalAlignment="Center"/>
+                            <TextBox x:Name="OffsetXBox" Grid.Column="1" Margin="0,0,6,0" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
+                            <TextBox x:Name="OffsetYBox" Grid.Column="2" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
+                        </Grid>
 
-                <Grid Margin="0,0,0,8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Lens Box Color" VerticalAlignment="Center"/>
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Width="22" Height="22" Margin="0,0,5,0" Background="#00D2FF" BorderBrush="#475569" Tag="#00D2FF" ToolTip="Cyan (#00D2FF)" Click="LensPreset_Click"/>
-                        <Button Width="22" Height="22" Margin="0,0,5,0" Background="#10B981" BorderBrush="#475569" Tag="#10B981" ToolTip="Emerald (#10B981)" Click="LensPreset_Click"/>
-                        <Button Width="22" Height="22" Margin="0,0,5,0" Background="#F59E0B" BorderBrush="#475569" Tag="#F59E0B" ToolTip="Amber (#F59E0B)" Click="LensPreset_Click"/>
-                        <Button Width="22" Height="22" Margin="0,0,5,0" Background="#FF3B30" BorderBrush="#475569" Tag="#FF3B30" ToolTip="Red (#FF3B30)" Click="LensPreset_Click"/>
-                        <Button Width="22" Height="22" Margin="0,0,5,0" Background="#A855F7" BorderBrush="#475569" Tag="#A855F7" ToolTip="Purple (#A855F7)" Click="LensPreset_Click"/>
-                        <Button Width="22" Height="22" Margin="0,0,8,0" Background="#FFFFFF" BorderBrush="#475569" Tag="#FFFFFF" ToolTip="White (#FFFFFF)" Click="LensPreset_Click"/>
-                        <TextBox x:Name="LensColorBox" Width="88" Padding="6,3" FontFamily="Consolas" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155" TextChanged="LensColorBox_TextChanged"/>
-                        <Border x:Name="LensColorPreview" Width="26" Height="22" Margin="6,0,0,0" CornerRadius="3" BorderBrush="#64748B" BorderThickness="1" Background="#00D2FF"/>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Overlay Monitor Scope" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="MonitorScopeCombo" Grid.Column="1" Foreground="#0F172A">
+                                <ComboBoxItem Content="Primary Monitor Only" Tag="PrimaryOnly"/>
+                                <ComboBoxItem Content="All Monitors (Virtual Screen)" Tag="AllMonitors"/>
+                            </ComboBox>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Lens Box Color" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Width="22" Height="22" Margin="0,0,5,0" Background="#00D2FF" BorderBrush="#475569" Tag="#00D2FF" ToolTip="Cyan (#00D2FF)" Click="LensPreset_Click"/>
+                                <Button Width="22" Height="22" Margin="0,0,5,0" Background="#10B981" BorderBrush="#475569" Tag="#10B981" ToolTip="Emerald (#10B981)" Click="LensPreset_Click"/>
+                                <Button Width="22" Height="22" Margin="0,0,5,0" Background="#F59E0B" BorderBrush="#475569" Tag="#F59E0B" ToolTip="Amber (#F59E0B)" Click="LensPreset_Click"/>
+                                <Button Width="22" Height="22" Margin="0,0,5,0" Background="#FF3B30" BorderBrush="#475569" Tag="#FF3B30" ToolTip="Red (#FF3B30)" Click="LensPreset_Click"/>
+                                <Button Width="22" Height="22" Margin="0,0,5,0" Background="#A855F7" BorderBrush="#475569" Tag="#A855F7" ToolTip="Purple (#A855F7)" Click="LensPreset_Click"/>
+                                <Button Width="22" Height="22" Margin="0,0,8,0" Background="#FFFFFF" BorderBrush="#475569" Tag="#FFFFFF" ToolTip="White (#FFFFFF)" Click="LensPreset_Click"/>
+                                <TextBox x:Name="LensColorBox" Width="88" Padding="6,3" FontFamily="Consolas" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155" TextChanged="LensColorBox_TextChanged"/>
+                                <Border x:Name="LensColorPreview" Width="26" Height="22" Margin="6,0,0,0" CornerRadius="3" BorderBrush="#64748B" BorderThickness="1" Background="#00D2FF"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="52"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Lens Box Opacity" VerticalAlignment="Center"/>
+                            <Slider x:Name="LensOpacitySlider" Grid.Column="1" Minimum="0.15" Maximum="1.0" Value="1.0" SmallChange="0.05" LargeChange="0.1" ValueChanged="OnLensOpacityChanged"/>
+                            <TextBlock x:Name="LensOpacityVal" Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" VerticalAlignment="Center"/>
+                        </Grid>
                     </StackPanel>
-                </Grid>
+                </ScrollViewer>
+            </TabItem>
 
-                <Grid Margin="0,0,0,14">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="52"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Lens Box Opacity" VerticalAlignment="Center"/>
-                    <Slider x:Name="LensOpacitySlider" Grid.Column="1" Minimum="0.15" Maximum="1.0" Value="1.0" SmallChange="0.05" LargeChange="0.1" ValueChanged="OnLensOpacityChanged"/>
-                    <TextBlock x:Name="LensOpacityVal" Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" VerticalAlignment="Center"/>
-                </Grid>
+            <!-- TAB 2: INPUT & SMOOTHING -->
+            <TabItem Header="Input &amp; Hardware">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="1-Euro Smoothing Filter" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="52"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Minimum Cutoff (Hz)" VerticalAlignment="Center"/>
+                            <Slider x:Name="MinCutoffSlider" Grid.Column="1" Minimum="0.2" Maximum="8.0" Value="1.8" ValueChanged="OnFilterSliderChanged"/>
+                            <TextBlock x:Name="MinCutoffVal" Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="52"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Speed Coefficient (Beta)" VerticalAlignment="Center"/>
+                            <Slider x:Name="BetaSlider" Grid.Column="1" Minimum="0.0" Maximum="0.2" Value="0.025" ValueChanged="OnFilterSliderChanged"/>
+                            <TextBlock x:Name="BetaVal" Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="52"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Derivative Cutoff (Hz)" VerticalAlignment="Center"/>
+                            <Slider x:Name="DCutoffSlider" Grid.Column="1" Minimum="0.2" Maximum="5.0" Value="1.0" ValueChanged="OnFilterSliderChanged"/>
+                            <TextBlock x:Name="DCutoffVal" Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" VerticalAlignment="Center"/>
+                        </Grid>
 
-                <TextBlock Text="1-Euro Smoothing Filter" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,4,0,8"/>
-                <Grid Margin="0,0,0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="52"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Minimum Cutoff (Hz)" VerticalAlignment="Center"/>
-                    <Slider x:Name="MinCutoffSlider" Grid.Column="1" Minimum="0.2" Maximum="8.0" Value="1.8" ValueChanged="OnFilterSliderChanged"/>
-                    <TextBlock x:Name="MinCutoffVal" Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" VerticalAlignment="Center"/>
-                </Grid>
-                <Grid Margin="0,0,0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="52"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Speed Coefficient (Beta)" VerticalAlignment="Center"/>
-                    <Slider x:Name="BetaSlider" Grid.Column="1" Minimum="0.0" Maximum="0.2" Value="0.025" ValueChanged="OnFilterSliderChanged"/>
-                    <TextBlock x:Name="BetaVal" Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" VerticalAlignment="Center"/>
-                </Grid>
-                <Grid Margin="0,0,0,14">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="52"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Derivative Cutoff (Hz)" VerticalAlignment="Center"/>
-                    <Slider x:Name="DCutoffSlider" Grid.Column="1" Minimum="0.2" Maximum="5.0" Value="1.0" ValueChanged="OnFilterSliderChanged"/>
-                    <TextBlock x:Name="DCutoffVal" Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" VerticalAlignment="Center"/>
-                </Grid>
+                        <TextBlock Text="Adaptive Palm &amp; Multi-Contact Rejection" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,4,0,8"/>
+                        <CheckBox x:Name="PalmEnabledCheck" Content="Enable adaptive palm rejection (uses HID confidence &amp; contact geometry when available)" Foreground="#E2E8F0" Margin="0,0,0,6"/>
+                        <CheckBox x:Name="MultiFingerCheck" Content="Reject multi-finger gestures while drawing (eliminates 2-finger scroll dots)" Foreground="#E2E8F0" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Max Contact Width (Logical)" VerticalAlignment="Center"/>
+                            <TextBox x:Name="PalmWidthBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
+                        </Grid>
 
-                <TextBlock Text="Adaptive Palm &amp; Multi-Contact Rejection" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,4,0,8"/>
-                <CheckBox x:Name="PalmEnabledCheck" Content="Enable adaptive palm rejection (uses HID confidence &amp; contact geometry when available)" Foreground="#E2E8F0" Margin="0,0,0,6"/>
-                <CheckBox x:Name="MultiFingerCheck" Content="Reject multi-finger gestures while drawing" Foreground="#E2E8F0" Margin="0,0,0,8"/>
-                <Grid Margin="0,0,0,14">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Max Contact Width (Logical)" VerticalAlignment="Center"/>
-                    <TextBox x:Name="PalmWidthBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
-                </Grid>
+                        <TextBlock Text="Cursor Isolation &amp; Startup" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,4,0,8"/>
+                        <CheckBox x:Name="SuppressTouchpadCursorCheck" Content="Suppress built-in touchpad cursor movement while Doodle Mode is ON (external mouse moves cursor freely)" Foreground="#E2E8F0" Margin="0,0,0,8"/>
+                        <CheckBox x:Name="StartWithWindowsCheck" Content="Start TrackPadLens with Windows (current user registry key, no admin required)" Foreground="#E2E8F0" Margin="0,0,0,8"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
-                <TextBlock Text="Global Hotkeys" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,4,0,8"/>
-                <Grid Margin="0,0,0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Toggle Doodle Mode" VerticalAlignment="Center"/>
-                    <TextBox x:Name="HotkeyDoodleBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
-                </Grid>
-                <Grid Margin="0,0,0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Undo Last Stroke" VerticalAlignment="Center"/>
-                    <TextBox x:Name="HotkeyUndoBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
-                </Grid>
-                <Grid Margin="0,0,0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Save Snapshot" VerticalAlignment="Center"/>
-                    <TextBox x:Name="HotkeySnapshotBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
-                </Grid>
-                <Grid Margin="0,0,0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="190"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Clear All Ink (Doodle Mode)" VerticalAlignment="Center"/>
-                    <TextBox x:Name="HotkeyClearBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
-                </Grid>
-                <TextBlock Text="Doodle-Mode-only quick keys (active only while Doodle Mode is ON): E = Stroke Eraser · 1 / 2 / 3 = Thin / Medium / Thick · D = Pen / Cycle Pen Colors · C = Clear All"
-                           Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12"/>
+            <!-- TAB 3: DOCUMENTS, AUTOSAVE & INTELLIGENCE -->
+            <TabItem Header="Documents &amp; Intelligence">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="Workspace Autosave &amp; Recovery" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="64"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Autosave Interval (seconds)" VerticalAlignment="Center"/>
+                            <Slider x:Name="AutosaveSlider" Grid.Column="1" Minimum="15" Maximum="300" Value="45" SmallChange="5" LargeChange="15" ValueChanged="OnAutosaveSliderChanged"/>
+                            <TextBlock x:Name="AutosaveVal" Grid.Column="2" HorizontalAlignment="Right" FontFamily="Consolas" VerticalAlignment="Center"/>
+                        </Grid>
 
-                <CheckBox x:Name="SuppressTouchpadCursorCheck" Content="Suppress built-in touchpad cursor movement while Doodle Mode is ON (external mouse moves cursor freely)" Foreground="#E2E8F0" Margin="0,4,0,8"/>
-                <CheckBox x:Name="StartWithWindowsCheck" Content="Start TrackPadLens with Windows (current user registry key, no admin required)" Foreground="#E2E8F0" Margin="0,0,0,8"/>
-            </StackPanel>
-        </ScrollViewer>
+                        <TextBlock Text="Document Engines (Read-Only Non-Destructive)" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,4,0,8"/>
+                        <CheckBox x:Name="PreferLibreOfficeCheck" Content="Prefer installed LibreOffice (soffice.exe) for high-fidelity DOCX pagination when available" Foreground="#E2E8F0" Margin="0,0,0,12"/>
+
+                        <Border Background="#0B1120" BorderBrush="#1E293B" BorderThickness="1" CornerRadius="6" Padding="12">
+                            <StackPanel>
+                                <TextBlock Text="LOCAL CAPABILITY STATUS (REAL OS CHECKS)" FontSize="11" FontWeight="SemiBold" Foreground="#64748B" Margin="0,0,0,8"/>
+                                <TextBlock x:Name="PdfStatusText" FontFamily="Consolas" FontSize="12" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                <TextBlock x:Name="DocxStatusText" FontFamily="Consolas" FontSize="12" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                <TextBlock x:Name="OcrStatusText" FontFamily="Consolas" FontSize="12" Foreground="#E2E8F0" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                <TextBlock Text="Symbolic Math Engine: Built-in Offline AST Solver (Numeric, Simplify, Linear/Quadratic, Factorize, Derivative, Integral)"
+                                           FontFamily="Consolas" FontSize="12" Foreground="#34D399" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- TAB 4: SHORTCUTS & PROFILES -->
+            <TabItem Header="Shortcuts">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="Global Mode &amp; Capture Hotkeys" FontWeight="SemiBold" Foreground="#00D2FF" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Toggle Standard / Doodle Mode" VerticalAlignment="Center"/>
+                            <TextBox x:Name="HotkeyDoodleBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Activate Trackpad Lens Mode" VerticalAlignment="Center"/>
+                            <TextBox x:Name="HotkeyLensBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Open Whiteboard &amp; Study Workspace" VerticalAlignment="Center"/>
+                            <TextBox x:Name="HotkeyWhiteboardBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Region Screenshot Capture" VerticalAlignment="Center"/>
+                            <TextBox x:Name="HotkeyRegionBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Undo Last Overlay Stroke" VerticalAlignment="Center"/>
+                            <TextBox x:Name="HotkeyUndoBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Save Overlay Snapshot" VerticalAlignment="Center"/>
+                            <TextBox x:Name="HotkeySnapshotBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Clear All Ink (Doodle Mode Only)" VerticalAlignment="Center"/>
+                            <TextBox x:Name="HotkeyClearBox" Grid.Column="1" Padding="6,4" Background="#1E293B" Foreground="#F8FAFC" BorderBrush="#334155"/>
+                        </Grid>
+
+                        <TextBlock Text="Doodle-Mode-only quick keys (armed ONLY when Doodle Mode is ON): E = Eraser · 1/2/3 = Thin/Med/Thick · D = Pen/Cycle · C = Clear"
+                                   Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                        <TextBlock Text="Workspace-local shortcuts (active ONLY inside TrackPadLens Workspace — never stolen from PowerPoint or other apps): V = Select · P = Pen · E = Eraser · H = Highlighter · L = Lasso · Ctrl+Space = Magic Menu · Ctrl+Z/Y = Undo/Redo · Ctrl+V = Paste · Ctrl+S = Save · Ctrl+F = Search · Tab = Hide/Show Toolbar"
+                                   Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Restore Defaults" Padding="10,5" Margin="0,0,8,0" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#334155" Click="RestoreDefaultShortcuts_Click"/>
+                            <Button Content="Export Shortcut Profile..." Padding="10,5" Margin="0,0,8,0" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#334155" Click="ExportShortcuts_Click"/>
+                            <Button Content="Import Shortcut Profile..." Padding="10,5" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#334155" Click="ImportShortcuts_Click"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
             <Button Content="Cancel" Padding="14,7" Margin="0,0,8,0" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#334155" Click="CancelBtn_Click"/>

@@ -22,6 +22,8 @@
                 <TextBlock x:Name="ModeBannerText" FontSize="12" Foreground="#94A3B8" Margin="0,3,0,0" TextWrapping="Wrap" MaxWidth="480"/>
             </StackPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top">
+                <Button Content="Open Workspace (Alt+W)" Padding="12,8" Margin="0,0,8,0"
+                        Background="#1E293B" Foreground="#00D2FF" BorderBrush="#00D2FF" FontWeight="SemiBold" Click="WorkspaceBtn_Click"/>
                 <Button x:Name="ToggleDoodleBtn" Content="Enable Doodle Mode" Padding="14,8" Margin="0,0,8,0"
                         Background="#00D2FF" Foreground="#0B1120" FontWeight="SemiBold" BorderThickness="0" Click="ToggleDoodleBtn_Click"/>
                 <Button Content="Refresh Devices" Padding="12,8" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#334155" Click="RefreshBtn_Click"/>
@@ -108,6 +110,7 @@
             <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
                 <Button Content="Calibration..." Padding="12,7" Margin="0,0,8,0" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#334155" Click="CalibrationBtn_Click"/>
                 <Button Content="Settings..." Padding="12,7" Margin="0,0,8,0" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#334155" Click="SettingsBtn_Click"/>
+                <Button Content="Region Capture (Alt+Shift+S)" Padding="12,7" Margin="0,0,8,0" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#334155" Click="RegionCaptureBtn_Click"/>
                 <Button Content="Save Snapshot (Ctrl+S)" Padding="12,7" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#334155" Click="SnapshotBtn_Click"/>
             </StackPanel>
             <Button DockPanel.Dock="Right" Content="Hide to System Tray" Padding="12,7" Background="#1E293B" Foreground="#E2E8F0" BorderBrush="#334155" Click="HideToTrayBtn_Click"/>

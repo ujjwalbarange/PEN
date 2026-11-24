@@ -150,17 +150,22 @@
                     </Canvas>
                 </Button>
 
-                <!-- 10. Calibration -->
+                <!-- 10. Open Whiteboard & Smart Study Workspace -->
+                <Button Style="{StaticResource ToolBtn}" ToolTip="Open Whiteboard &amp; Smart Study Workspace (Alt+W)" Click="WorkspaceBtn_Click">
+                    <TextBlock Text="▤" FontSize="14" Foreground="#00D2FF"/>
+                </Button>
+
+                <!-- 11. Calibration -->
                 <Button Style="{StaticResource ToolBtn}" ToolTip="Touchpad Calibration" Click="CalibrationBtn_Click">
                     <TextBlock Text="⊞" FontSize="14"/>
                 </Button>
 
-                <!-- 11. Settings -->
+                <!-- 12. Settings -->
                 <Button Style="{StaticResource ToolBtn}" ToolTip="Settings &amp; Lens Appearance" Click="SettingsBtn_Click">
                     <TextBlock Text="⚙" FontSize="14"/>
                 </Button>
 
-                <!-- 12. Minimize to Tray -->
+                <!-- 13. Minimize to Tray -->
                 <Button Style="{StaticResource ToolBtn}" ToolTip="Minimize to System Tray" Click="TrayBtn_Click">
                     <TextBlock Text="▁" FontSize="12"/>
                 </Button>

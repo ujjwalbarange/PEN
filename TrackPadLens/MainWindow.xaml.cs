@@ -29,6 +29,8 @@ public partial class MainWindow : Window
     private readonly Action _openSettings;
     private readonly Action _saveSnapshot;
     private readonly Action<bool> _setHardwareTestMode;
+    private readonly Action _openWorkspace;
+    private readonly Action _regionCapture;
 
     private readonly DispatcherTimer _diagnosticsTimer;
     private readonly Queue<string> _rawLogLines = new(64);
@@ -45,7 +47,9 @@ public partial class MainWindow : Window
         Action openCalibration,
         Action openSettings,
         Action saveSnapshot,
-        Action<bool> setHardwareTestMode)
+        Action<bool> setHardwareTestMode,
+        Action openWorkspace,
+        Action regionCapture)
     {
         InitializeComponent();
 
@@ -60,6 +64,8 @@ public partial class MainWindow : Window
         _openSettings = openSettings;
         _saveSnapshot = saveSnapshot;
         _setHardwareTestMode = setHardwareTestMode;
+        _openWorkspace = openWorkspace;
+        _regionCapture = regionCapture;
 
         // Only refresh diagnostics while the diagnostics window is visible (zero idle background timer work)
         _diagnosticsTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -211,6 +217,8 @@ public partial class MainWindow : Window
         }
     }
 
+    private void WorkspaceBtn_Click(object sender, RoutedEventArgs e) => _openWorkspace();
+    private void RegionCaptureBtn_Click(object sender, RoutedEventArgs e) => _regionCapture();
     private void CalibrationBtn_Click(object sender, RoutedEventArgs e) => _openCalibration();
     private void SettingsBtn_Click(object sender, RoutedEventArgs e) => _openSettings();
     private void SnapshotBtn_Click(object sender, RoutedEventArgs e) => _saveSnapshot();
